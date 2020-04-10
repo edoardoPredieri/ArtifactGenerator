@@ -28,7 +28,7 @@ FileNameList = {"VIRTUALBOX" : 5, "VBOX" : 5, "ORACLE" : 5, "GUEST" : 4, "PHYSIC
                 "VIRUS" : 5,
                 "FOOBAR" : 3,
                 "DRIVERS\\PRLETH" : 4, "DRIVERS\\PRLFS" : 4, "DRIVERS\\PRLMOUSE" : 4, "DRIVERS\\PRLVIDEO" : 4, "DRIVERS\\TIME" : 4,
-                "*" : 2}
+                "*.*" : 2}
 
 GeneralCommandList = {"IsDebuggerPresent" : 5, "CheckRemoteDebuggerPresent" : 5,
                       "GetLocalTime" : 3, "GetSystemTimeAsFileTime" : 3, "GetTimeZoneInformation" : 3,
@@ -61,7 +61,7 @@ GeneralCommandList = {"IsDebuggerPresent" : 5, "CheckRemoteDebuggerPresent" : 5,
 
 
 
-FileDatabase={}         # file: [weight, created]
+FileDatabase={}         # file: [weight, isPresent, endAction, flag]
 IterationDatabase = {}  # iteration [FileDatabase, weight]
 
 
@@ -84,11 +84,11 @@ def calculateWeight(command, mode, targetFile):
     return (valueCommand + valueMode + valueName)/3
 
 
-def calculateIterWeight(actualEvasionPath, initialFilesNumber, initialThreadsNumber):
+def calculateIterWeight(actualEvasionPath, initialLinenumber, initialFilesNumber, initialThreadsNumber):
     endFilesNumber = 0
     commandsWeight = 0
     threads = []
-    lineNumber = 0
+    linesNumber = 0
     for file in os.listdir(actualEvasionPath):
         if "evasion_final" in file:
             f = open (actualEvasionPath + file,"r")
@@ -103,20 +103,30 @@ def calculateIterWeight(actualEvasionPath, initialFilesNumber, initialThreadsNum
                     commandsWeight += GeneralCommandList[command]
 
                 line = f.readline()
-                lineNumber += 1
+                linesNumber += 1
             f.close()
 
         endFilesNumber +=1 
 
     FilesNumberDiff = endFilesNumber - initialFilesNumber          #Processes Number Difference
     ThreadsNumberDiff =  len(threads) - initialThreadsNumber       #Threads Number Difference
-    print (FilesNumberDiff)
-    print (ThreadsNumberDiff)
-    return commandsWeight * (FilesNumberDiff + ThreadsNumberDiff +1)
+    lineNumberDiff = linesNumber - initialLinenumber               #Lines Number Difference
+    return (commandsWeight + 2*(lineNumberDiff)) * (FilesNumberDiff + ThreadsNumberDiff +1)
 
 
 
-
+def findFile(targetFile):
+    l = targetFile.split("\\")
+    name = l[len(l)-1]
+    path = "".join(str(elem)+"\\\\" for elem in l[0:len(l)-1]).strip()
+    for files in os.listdir(path):
+        if name == "*.*" and len(files)> 1:
+            return 1
+        if name in files:
+            return 1
+    return 0
+    
+                    
 
 
 
@@ -126,6 +136,7 @@ os.system("cd C:/Pin311 & pin -t bluepill32 -evasions -iter "+str(iteration)+" -
 actualEvasionPath = BluePill_evasion_path + str(iteration) + "/"
 
 FilesNumber = 0
+LinesNumber = 0
 threads = []
 
 for file in os.listdir(actualEvasionPath):
@@ -142,16 +153,18 @@ for file in os.listdir(actualEvasionPath):
                 mode = line.split("[")[1].split("]")[1].split("-")[1].strip()
                 targetFile = line.split("[")[1].split("]")[1].split("-")[2].strip()
 
-                weight = calculateWeight(command, mode, targetFile)
-                if targetFile not in FileDatabase.keys():
-                    FileDatabase[targetFile] = [weight, 0]
-                
+                if targetFile not in FileDatabase.keys() and len(targetFile) > 3:
+                    weight = calculateWeight(command, mode, targetFile)
+                    isPresent = findFile(targetFile)
+                    FileDatabase[targetFile] = [weight, isPresent, None, 0]
+                    
+            LinesNumber += 1    
             line = f.readline()
         f.close()
     FilesNumber += 1
 
 
-iterationWeight = calculateIterWeight(actualEvasionPath, FilesNumber, len(threads))
+iterationWeight = calculateIterWeight(actualEvasionPath, LinesNumber, FilesNumber, len(threads))
 IterationDatabase[iteration] = [FileDatabase.copy(), iterationWeight]
 #evalution 
 print(IterationDatabase)
