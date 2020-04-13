@@ -61,8 +61,9 @@ GeneralCommandList = {"IsDebuggerPresent" : 5, "CheckRemoteDebuggerPresent" : 5,
 
 
 
-FileDatabase={}         # file: [weight, isPresent, endAction, flag]
+FileDatabase = {}         # file: [weight, isPresent, endAction, flag]
 IterationDatabase = {}  # iteration [FileDatabase, weight]
+
 
 
 def calculateWeight(command, mode, targetFile):
@@ -101,12 +102,14 @@ def calculateIterWeight(actualEvasionPath, initialLinenumber, initialFilesNumber
                 command = line.split("[")[1].split("]")[0]
                 if command in GeneralCommandList.keys():
                     commandsWeight += GeneralCommandList[command]
-
-                line = f.readline()
+                if command in FileCommandList.keys():
+                    commandsWeight += FileCommandList[command]
+                    
                 linesNumber += 1
+                line = f.readline()
             f.close()
 
-        endFilesNumber +=1 
+        endFilesNumber += 1 
 
     FilesNumberDiff = endFilesNumber - initialFilesNumber          #Processes Number Difference
     ThreadsNumberDiff =  len(threads) - initialThreadsNumber       #Threads Number Difference
@@ -126,45 +129,165 @@ def findFile(targetFile):
             return 1
     return 0
     
-                    
+
+def actionArtifactFile():
+    importantFile = ""
+    maxWeight = 0
+    for i in FileDatabase.keys():
+        if FileDatabase[i][0] > maxWeight and not FileDatabase[i][3]:
+            maxWeight = FileDatabase[i][0]
+            importantFile = i
+
+    if FileDatabase[importantFile][1] == 1:
+         print("Deleting: "+importantFile+"...")
+         l = importantFile.split("\\")
+         name = l[len(l)-1]
+         path = "".join(str(elem)+"\\\\" for elem in l[0:len(l)-1]).strip()
+         if name == "*.*":
+            os.remove(path+"ag.txt")
+         else:
+             os.remove(importantFile)
+         FileDatabase[importantFile][1] = 0
+    else:
+        print("Creating: "+importantFile+"...")
+        l = importantFile.split("\\")
+        name = l[len(l)-1]
+        path = "".join(str(elem)+"\\\\" for elem in l[0:len(l)-1]).strip()
+        if name == "*.*":
+            f = open (path+"ag.txt", "w")
+            f.write("Created by Artifact Generator")
+            f.close()
+        else:
+            f = open (importantFile, "w")
+            f.write("Created by Artifact Generator")
+            f.close()
+        FileDatabase[importantFile][1] = 1
+    
+    FileDatabase[importantFile][3] = True
+    return importantFile
+
+
+def restoreArtifact(LastTouchedFile):
+    if FileDatabase[LastTouchedFile][1] == 1:
+        print("Deleting: "+LastTouchedFile+"...")
+        l = LastTouchedFile.split("\\")
+        name = l[len(l)-1]
+        path = "".join(str(elem)+"\\\\" for elem in l[0:len(l)-1]).strip()
+        if name == "*.*":
+            os.remove(path+"ag.txt")
+        else:
+            os.remove(LastTouchedFile)
+        FileDatabase[LastTouchedFile][1] = 0
+    else:
+        print("Creating: "+LastTouchedFile+"...")
+        l = LastTouchedFile.split("\\")
+        name = l[len(l)-1]
+        path = "".join(str(elem)+"\\\\" for elem in l[0:len(l)-1]).strip()
+        if name == "*.*":
+            f = open (path+"ag.txt", "w")
+            f.write("Created by Artifact Generator")
+            f.close()
+        else:
+            f = open (LastTouchedFile, "w")
+            f.write("Created by Artifact Generator")
+            f.close()
+        FileDatabase[LastTouchedFile][1] = 1
+
+    FileDatabase[LastTouchedFile][3] = True
+    FileDatabase[LastTouchedFile][2] = "No modification"
+    LastTouchedFile = ""
+
+
+def validationFile():
+    for i in FileDatabase.keys():
+        if FileDatabase[i][3] and FileDatabase[i][2] == None :
+             if  FileDatabase[i][1] == 1:
+                FileDatabase[i][2] = "To be Created"
+             else:
+                FileDatabase[i][2] = "To be Deleted"
+
+
+def exitCase():
+    for i in FileDatabase.keys():
+        if FileDatabase[i][2] == None:
+            return False
+    return True
 
 
 
 iteration = 0
-os.system("cd C:/Pin311 & pin -t bluepill32 -evasions -iter "+str(iteration)+" -- ee.exe")
+LastTouchedFile = ""
+print("ArtifactGenerator")
+print("")
+while(True):
+    os.system("cd C:/Pin311 & pin -t bluepill32 -evasions -iter "+str(iteration)+" -- ee.exe")
+    actualEvasionPath = BluePill_evasion_path + str(iteration) + "/"
 
-actualEvasionPath = BluePill_evasion_path + str(iteration) + "/"
+    FilesNumber = 0
+    LinesNumber = 0
+    threads = []
 
-FilesNumber = 0
-LinesNumber = 0
-threads = []
-
-for file in os.listdir(actualEvasionPath):
-    if "evasion_final" in file:
-        f = open (actualEvasionPath + file,"r")
-        line = f.readline()
-        while line != "":
-            thread = line.split(":")[0]
-            if thread not in threads :
-                threads.append(thread)
-                
-            command = line.split("[")[1].split("]")[0]
-            if command in FileCommandList.keys():
-                mode = line.split("[")[1].split("]")[1].split("-")[1].strip()
-                targetFile = line.split("[")[1].split("]")[1].split("-")[2].strip()
-
-                if targetFile not in FileDatabase.keys() and len(targetFile) > 3:
-                    weight = calculateWeight(command, mode, targetFile)
-                    isPresent = findFile(targetFile)
-                    FileDatabase[targetFile] = [weight, isPresent, None, 0]
-                    
-            LinesNumber += 1    
+    for file in os.listdir(actualEvasionPath):
+        if "evasion_final" in file:
+            f = open (actualEvasionPath + file,"r")
             line = f.readline()
-        f.close()
-    FilesNumber += 1
+            while line != "":
+                thread = line.split(":")[0]
+                if thread not in threads :
+                    threads.append(thread)
+                    
+                command = line.split("[")[1].split("]")[0]
+                if command in FileCommandList.keys():
+                    mode = line.split("[")[1].split("]")[1].split("-")[1].strip()
+                    targetFile = line.split("[")[1].split("]")[1].split("-")[2].strip()
+
+                    if targetFile not in FileDatabase.keys() and len(targetFile) > 3:
+                        weight = calculateWeight(command, mode, targetFile)
+                        isPresent = findFile(targetFile)
+                        FileDatabase[targetFile] = [weight, isPresent, None, False]
+                        
+                LinesNumber += 1    
+                line = f.readline()
+            f.close()
+        FilesNumber += 1
+
+    iterationWeight = calculateIterWeight(actualEvasionPath, LinesNumber, FilesNumber, len(threads))
+    IterationDatabase[iteration] = [FileDatabase.copy(), iterationWeight]
+    
+    if iteration == 0 or IterationDatabase[iteration][1] > IterationDatabase[iteration-1][1]:
+        print("BETTER THAN PREVIOUS ITERATION")
+        validationFile()
+        if iteration > 0 and exitCase():
+            break
+        LastTouchedFile = actionArtifactFile()
+    elif IterationDatabase[iteration][1] == IterationDatabase[iteration-1][1]:
+        print("EQUAL TO PREVIOUS ITERATION")
+        if iteration > 0 and exitCase():
+            break
+        restoreArtifact(LastTouchedFile)
+        LastTouchedFile = actionArtifactFile()
+    else:
+        print("WORSE THAN PREVIOUS ITERATION")
+        validationFile()
+        restoreArtifact(LastTouchedFile)
+        if iteration > 0 and exitCase():
+            break
+        LastTouchedFile = actionArtifactFile()
+
+    iteration += 1
 
 
-iterationWeight = calculateIterWeight(actualEvasionPath, LinesNumber, FilesNumber, len(threads))
-IterationDatabase[iteration] = [FileDatabase.copy(), iterationWeight]
-#evalution 
-print(IterationDatabase)
+f = open("report.txt","w")
+f.close()
+f = open("report.txt","a")
+f.write("ArtifactGenerator\n")
+print("")
+f.write("\n")
+for i in IterationDatabase[iteration][0].keys():
+    print (i+": "+IterationDatabase[iteration][0][i][2])
+    f.write(i+": "+IterationDatabase[iteration][0][i][2]+"\n")
+print("")
+f.write("\n")
+print("The complete report is in: "+BluePill_evasion_path + str(iteration) + "/")
+f.write("The complete report is in: "+BluePill_evasion_path + str(iteration) + "/")
+f.close()
