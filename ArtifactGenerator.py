@@ -1,6 +1,8 @@
 import os
+import time
 
 BluePill_evasion_path = "C:/Pin311/Iterations/"
+BluePill_blackList_path = "C:/Pin311/blacklist.txt"
 
 FileCommandList = {"CreateFile" : 1, "CreateFileA" : 1, "CreateFileW" : 1,
                    "GetFileAttributesA" : 4, "GetFileAttributesW" : 4,
@@ -60,21 +62,26 @@ GeneralCommandList = {"IsDebuggerPresent" : 5, "CheckRemoteDebuggerPresent" : 5,
                       "NtOpenKey" : 2, "NtEnumerateKey" :2 , "NtQueryValueKey":2 , "NtQueryAttributesFile" :2}
 
 
+noExistFiles = []
 
 FileDatabase = {}         # file: [weight, isPresent, endAction, flag]
 IterationDatabase = {}  # iteration [FileDatabase, weight]
 
 
+def writeBlackList():
+    f = open(BluePill_blackList_path,"w")
+    for i in noExistFiles:
+        f.write(i+'\n')
+    f.close()
+
 
 def calculateWeight(command, mode, targetFile):
     valueCommand = FileCommandList[command]
-    
     valueMode = 0
     if mode in ModeList.keys():
         valueMode = ModeList[mode]
     else:
         valueMode = 2
-
     valueName = 1
     maxName =""
     for n in FileNameList.keys():
@@ -91,7 +98,7 @@ def calculateIterWeight(actualEvasionPath, initialLinenumber, initialFilesNumber
     threads = []
     linesNumber = 0
     for file in os.listdir(actualEvasionPath):
-        if "evasion_final" in file:
+        if "evasion" in file:
             f = open (actualEvasionPath + file,"r")
             line = f.readline()
             while line != "":
@@ -117,7 +124,6 @@ def calculateIterWeight(actualEvasionPath, initialLinenumber, initialFilesNumber
     return (commandsWeight + 2*(lineNumberDiff)) * (FilesNumberDiff + ThreadsNumberDiff +1)
 
 
-
 def findFile(targetFile):
     l = targetFile.split("\\")
     name = l[len(l)-1]
@@ -133,10 +139,14 @@ def findFile(targetFile):
 def actionArtifactFile():
     importantFile = ""
     maxWeight = 0
-    for i in FileDatabase.keys():
-        if FileDatabase[i][0] > maxWeight and not FileDatabase[i][3]:
-            maxWeight = FileDatabase[i][0]
-            importantFile = i
+    if len(FileDatabase) > 0:
+        for i in FileDatabase.keys():
+            if FileDatabase[i][0] > maxWeight and not FileDatabase[i][3]:
+                maxWeight = FileDatabase[i][0]
+                importantFile = i
+
+    else:
+        return
 
     if FileDatabase[importantFile][1] == 1:
          print("Deleting: "+importantFile+"...")
@@ -144,9 +154,11 @@ def actionArtifactFile():
          name = l[len(l)-1]
          path = "".join(str(elem)+"\\\\" for elem in l[0:len(l)-1]).strip()
          if name == "*.*":
-            os.remove(path+"ag.txt")
+             noExistFiles.append((path+"ag.txt").upper())
+             writeBlackList()
          else:
-             os.remove(importantFile)
+             noExistFiles.append(importantFile.upper())
+             writeBlackList()
          FileDatabase[importantFile][1] = 0
     else:
         print("Creating: "+importantFile+"...")
@@ -154,10 +166,16 @@ def actionArtifactFile():
         name = l[len(l)-1]
         path = "".join(str(elem)+"\\\\" for elem in l[0:len(l)-1]).strip()
         if name == "*.*":
+            if (path+"ag.txt").upper() in noExistFiles:
+                noExistFiles.remove((path+"ag.txt").upper())
+                writeBlackList()
             f = open (path+"ag.txt", "w")
             f.write("Created by Artifact Generator")
             f.close()
         else:
+            if importantFile.upper() in noExistFiles:
+                noExistFiles.remove(importantFile.upper())
+                writeBlackList()
             f = open (importantFile, "w")
             f.write("Created by Artifact Generator")
             f.close()
@@ -174,9 +192,11 @@ def restoreArtifact(LastTouchedFile):
         name = l[len(l)-1]
         path = "".join(str(elem)+"\\\\" for elem in l[0:len(l)-1]).strip()
         if name == "*.*":
-            os.remove(path+"ag.txt")
+            noExistFiles.append((path+"ag.txt").upper())
+            writeBlackList()
         else:
-            os.remove(LastTouchedFile)
+            noExistFiles.append(LastTouchedFile.upper())
+            writeBlackList()
         FileDatabase[LastTouchedFile][1] = 0
     else:
         print("Creating: "+LastTouchedFile+"...")
@@ -184,10 +204,16 @@ def restoreArtifact(LastTouchedFile):
         name = l[len(l)-1]
         path = "".join(str(elem)+"\\\\" for elem in l[0:len(l)-1]).strip()
         if name == "*.*":
+            if (path+"ag.txt").upper() in noExistFiles:
+                noExistFiles.remove((path+"ag.txt").upper())
+                writeBlackList()
             f = open (path+"ag.txt", "w")
             f.write("Created by Artifact Generator")
             f.close()
         else:
+            if LastTouchedFile.upper() in noExistFiles:
+                noExistFiles.remove(LastTouchedFile.upper())
+                writeBlackList()
             f = open (LastTouchedFile, "w")
             f.write("Created by Artifact Generator")
             f.close()
@@ -214,13 +240,23 @@ def exitCase():
     return True
 
 
+def clearPath(targetFile):
+    l = targetFile.split("\\")
+    path = ""
+    for elem in l[2:len(l)]:
+        if elem != l[len(l)-1]:
+            path += str(elem)+"\\\\"
+        else:
+            path += str(elem)
+    return path 
 
 iteration = 0
 LastTouchedFile = ""
 print("ArtifactGenerator")
 print("")
 while(True):
-    os.system("cd C:/Pin311 & pin -t bluepill32 -evasions -iter "+str(iteration)+" -- ee.exe")
+    os.system("cd C:/Pin311 & pin -follow_execv -t bluepill32 -evasions -iter "+str(iteration)+" -- ee.exe")
+    #time.sleep(5)
     actualEvasionPath = BluePill_evasion_path + str(iteration) + "/"
 
     FilesNumber = 0
@@ -228,7 +264,7 @@ while(True):
     threads = []
 
     for file in os.listdir(actualEvasionPath):
-        if "evasion_final" in file:
+        if "evasion" in file:
             f = open (actualEvasionPath + file,"r")
             line = f.readline()
             while line != "":
@@ -240,17 +276,25 @@ while(True):
                 if command in FileCommandList.keys():
                     mode = line.split("[")[1].split("]")[1].split("-")[1].strip()
                     targetFile = line.split("[")[1].split("]")[1].split("-")[2].strip()
-
-                    if targetFile not in FileDatabase.keys() and len(targetFile) > 3:
+                    if targetFile not in FileDatabase.keys() and len(targetFile) > 3 and "C:" in targetFile and "Windows" not in targetFile and "Pin" not in targetFile and targetFile[len(targetFile)-1] != "\\":
+                        if "?" in targetFile:
+                           targetFile = clearPath(targetFile)
                         weight = calculateWeight(command, mode, targetFile)
-                        isPresent = findFile(targetFile)
-                        FileDatabase[targetFile] = [weight, isPresent, None, False]
+                        try:    
+                            isPresent = findFile(targetFile)
+                            FileDatabase[targetFile] = [weight, isPresent, None, False]
+                        except:
+                            print("Error file: "+targetFile)
                         
                 LinesNumber += 1    
                 line = f.readline()
             f.close()
         FilesNumber += 1
 
+    if len(FileDatabase) == 0:
+        print("No file queries")
+        break
+    
     iterationWeight = calculateIterWeight(actualEvasionPath, LinesNumber, FilesNumber, len(threads))
     IterationDatabase[iteration] = [FileDatabase.copy(), iterationWeight]
     
@@ -266,6 +310,7 @@ while(True):
             break
         restoreArtifact(LastTouchedFile)
         LastTouchedFile = actionArtifactFile()
+        validationFile()
     else:
         print("WORSE THAN PREVIOUS ITERATION")
         validationFile()
@@ -277,17 +322,22 @@ while(True):
     iteration += 1
 
 
-f = open("report.txt","w")
-f.close()
-f = open("report.txt","a")
-f.write("ArtifactGenerator\n")
-print("")
-f.write("\n")
-for i in IterationDatabase[iteration][0].keys():
-    print (i+": "+IterationDatabase[iteration][0][i][2])
-    f.write(i+": "+IterationDatabase[iteration][0][i][2]+"\n")
-print("")
-f.write("\n")
-print("The complete report is in: "+BluePill_evasion_path + str(iteration) + "/")
-f.write("The complete report is in: "+BluePill_evasion_path + str(iteration) + "/")
-f.close()
+try:
+    f = open("report.txt","w")
+    f.close()
+    f = open("report.txt","a")
+    f.write("ArtifactGenerator\n")
+    print("")
+    f.write("\n")
+    for i in IterationDatabase[iteration][0].keys():
+        print (i+": "+IterationDatabase[iteration][0][i][2])
+        f.write(i+": "+IterationDatabase[iteration][0][i][2]+"\n")
+    print("")
+    f.write("\n")
+    print("The complete report is in: "+BluePill_evasion_path + str(iteration) + "/")
+    f.write("The complete report is in: "+BluePill_evasion_path + str(iteration) + "/")
+    f.close()
+    noExistFiles.clear()
+    writeBlackList()
+except:
+    None
