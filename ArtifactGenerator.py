@@ -1,17 +1,19 @@
 import os
 import time
 
-BluePill_evasion_path = "C:/Pin311/Iterations/"
-BluePill_blackList_path = "C:/Pin311/blacklist.txt"
+BluePill_evasion_path = "C:/Pin311/Iterations/"             #Path of evasion.log files
+BluePill_blackList_path = "C:/Pin311/blacklist.txt"         #Path to blacklist file
 
+#Weighted list of file manipulation commands
 FileCommandList = {"CreateFile" : 1, "CreateFileA" : 1, "CreateFileW" : 1,
-                   "GetFileAttributesA" : 4, "GetFileAttributesW" : 4,
+                   "GetFileAttributesA" : 4, "GetFileAttributesW" : 4, "GetFileAttributes" : 4,
                    "OpenFile" : 2,
                    "PathFileExists" : 5, "PathFileExistsA" : 5, "PathFileExistsW" : 5,
                    "FindFirstFile" : 4, "FindFirstFileA" : 4, "FindFirstFileW" : 4, "FindFirstFileEx" : 4, "FindFirstFileExA" : 4, "FindFirstFileExW" : 4,
                    "NtCreateFile" : 3,
                    "GetModuleFileName" : 2, "GetModuleFileNameA" :2 , "GetModuleFileNameW" :2}
 
+#Weighted list of file open modalities
 ModeList = {"Create" : 1, "Replace/Create" : 1, "Overwrite/Create" :1,
             "Delete" : 1,
             "Exist" : 5,
@@ -21,6 +23,7 @@ ModeList = {"Create" : 1, "Replace/Create" : 1, "Overwrite/Create" :1,
             "Search" : 5,
             "Unknow" : 2}
 
+#Weighted list of file names
 FileNameList = {"VIRTUALBOX" : 5, "VBOX" : 5, "ORACLE" : 5, "GUEST" : 4, "PHYSICALDRIVE" : 4, "VM" : 4,
 		"VMMOUSE" : 5, "HGFS" : 5, "VMHGFS" : 5, "VMCI" : 5, "VMWARE" : 5, "VBOXMOUSE" : 5, "VBOXGUEST" : 5, "VBOXSF" : 5, "VBOXVIDEO" :5,
                 "LOADDLL" : 3,
@@ -32,6 +35,7 @@ FileNameList = {"VIRTUALBOX" : 5, "VBOX" : 5, "ORACLE" : 5, "GUEST" : 4, "PHYSIC
                 "DRIVERS\\PRLETH" : 4, "DRIVERS\\PRLFS" : 4, "DRIVERS\\PRLMOUSE" : 4, "DRIVERS\\PRLVIDEO" : 4, "DRIVERS\\TIME" : 4,
                 "*.*" : 2}
 
+#Weighted list of commands
 GeneralCommandList = {"IsDebuggerPresent" : 5, "CheckRemoteDebuggerPresent" : 5,
                       "GetLocalTime" : 3, "GetSystemTimeAsFileTime" : 3, "GetTimeZoneInformation" : 3,
                       "GetComputerNameA" : 3, "GetComputerNameW" :3,
@@ -61,11 +65,14 @@ GeneralCommandList = {"IsDebuggerPresent" : 5, "CheckRemoteDebuggerPresent" : 5,
                       "NtQueryDO" : 2,
                       "NtOpenKey" : 2, "NtEnumerateKey" :2 , "NtQueryValueKey":2 , "NtQueryAttributesFile" :2}
 
+#List of files to not modificate
+whitelist = ["PIN.EXE", "SORTDEFAULT.NLS", "DESKTOP.INI", "EE.EXE", "EDO", "APPDATA", "USERS", "MOUNTPOINTMANAGER"]
 
-noExistFiles = []
 
-FileDatabase = {}         # file: [weight, isPresent, endAction, flag]
-IterationDatabase = {}  # iteration [FileDatabase, weight]
+noExistFiles = []           #List of Files to be "delete" through BluePill
+
+FileDatabase = {}           #File: [weight, isPresent, endAction, flag]
+IterationDatabase = {}      #Iteration: [FileDatabase, weight]
 
 
 def writeBlackList():
@@ -144,8 +151,8 @@ def actionArtifactFile():
             if FileDatabase[i][0] > maxWeight and not FileDatabase[i][3]:
                 maxWeight = FileDatabase[i][0]
                 importantFile = i
-
     else:
+        print("Error")
         return
 
     if FileDatabase[importantFile][1] == 1:
@@ -180,7 +187,7 @@ def actionArtifactFile():
             f.write("Created by Artifact Generator")
             f.close()
         FileDatabase[importantFile][1] = 1
-    
+
     FileDatabase[importantFile][3] = True
     return importantFile
 
@@ -220,17 +227,22 @@ def restoreArtifact(LastTouchedFile):
         FileDatabase[LastTouchedFile][1] = 1
 
     FileDatabase[LastTouchedFile][3] = True
-    FileDatabase[LastTouchedFile][2] = "No modification"
-    LastTouchedFile = ""
 
 
-def validationFile():
-    for i in FileDatabase.keys():
-        if FileDatabase[i][3] and FileDatabase[i][2] == None :
-             if  FileDatabase[i][1] == 1:
-                FileDatabase[i][2] = "To be Created"
-             else:
-                FileDatabase[i][2] = "To be Deleted"
+def validationFile(file, mode):
+    if mode == 0:                                       #Better Case
+        if FileDatabase[file][1] == 1:
+            FileDatabase[file][2] = "To be Created"
+        else:
+            FileDatabase[file][2] = "To be Deleted"
+    elif mode == 1:                                     #Equal Case
+        FileDatabase[file][2] = "No modification"
+    else:                                               #Worse Case
+        if FileDatabase[file][1] == 0:
+            FileDatabase[file][2] = "To be Created"
+        else:
+            FileDatabase[file][2] = "To be Deleted"
+
 
 
 def exitCase():
@@ -249,6 +261,29 @@ def clearPath(targetFile):
         else:
             path += str(elem)
     return path 
+
+
+def getBestIteration():
+    maxx = 0
+    best = 0
+    for i in IterationDatabase.keys():
+        if IterationDatabase[i][1] > maxx:
+            maxx = IterationDatabase[i][1]
+            best = i
+    return best
+
+
+def inWhiteList(file):
+    l = file.split("\\")
+    name = l[len(l)-1]
+    return name in whitelist
+
+def inDatabase(file):
+    if file not in FileDatabase.keys():        
+        return clearPath(file) in FileDatabase.keys()
+    return True
+
+
 
 iteration = 0
 LastTouchedFile = ""
@@ -276,7 +311,7 @@ while(True):
                 if command in FileCommandList.keys():
                     mode = line.split("[")[1].split("]")[1].split("-")[1].strip()
                     targetFile = line.split("[")[1].split("]")[1].split("-")[2].strip()
-                    if targetFile not in FileDatabase.keys() and len(targetFile) > 3 and "C:" in targetFile and "Windows" not in targetFile and "Pin" not in targetFile and targetFile[len(targetFile)-1] != "\\":
+                    if not inDatabase(targetFile) and len(targetFile) > 3 and "C:" in targetFile and not inWhiteList(targetFile.upper()) and targetFile[len(targetFile)-1] != "\\":
                         if "?" in targetFile:
                            targetFile = clearPath(targetFile)
                         weight = calculateWeight(command, mode, targetFile)
@@ -297,28 +332,28 @@ while(True):
     
     iterationWeight = calculateIterWeight(actualEvasionPath, LinesNumber, FilesNumber, len(threads))
     IterationDatabase[iteration] = [FileDatabase.copy(), iterationWeight]
-    
+
     if iteration == 0 or IterationDatabase[iteration][1] > IterationDatabase[iteration-1][1]:
         print("BETTER THAN PREVIOUS ITERATION")
-        validationFile()
+        if iteration > 0:
+            validationFile(LastTouchedFile, 0)
         if iteration > 0 and exitCase():
             break
         LastTouchedFile = actionArtifactFile()
     elif IterationDatabase[iteration][1] == IterationDatabase[iteration-1][1]:
         print("EQUAL TO PREVIOUS ITERATION")
+        validationFile(LastTouchedFile, 1)
         if iteration > 0 and exitCase():
             break
         restoreArtifact(LastTouchedFile)
         LastTouchedFile = actionArtifactFile()
-        validationFile()
     else:
         print("WORSE THAN PREVIOUS ITERATION")
-        validationFile()
-        restoreArtifact(LastTouchedFile)
+        validationFile(LastTouchedFile, 2)
         if iteration > 0 and exitCase():
             break
-        LastTouchedFile = actionArtifactFile()
-
+        restoreArtifact(LastTouchedFile)
+        
     iteration += 1
 
 
@@ -334,8 +369,8 @@ try:
         f.write(i+": "+IterationDatabase[iteration][0][i][2]+"\n")
     print("")
     f.write("\n")
-    print("The complete report is in: "+BluePill_evasion_path + str(iteration) + "/")
-    f.write("The complete report is in: "+BluePill_evasion_path + str(iteration) + "/")
+    print("The complete report is in: "+BluePill_evasion_path + str(getBestIteration()) + "/")
+    f.write("The complete report is in: "+BluePill_evasion_path + str(getBestIteration()) + "/")
     f.close()
     noExistFiles.clear()
     writeBlackList()
