@@ -66,7 +66,7 @@ GeneralCommandList = {"IsDebuggerPresent" : 5, "CheckRemoteDebuggerPresent" : 5,
                       "NtOpenKey" : 2, "NtEnumerateKey" :2 , "NtQueryValueKey":2 , "NtQueryAttributesFile" :2}
 
 #List of files to not modificate
-whitelist = ["PIN.EXE", "SORTDEFAULT.NLS", "DESKTOP.INI", "EE.EXE", "EDO", "APPDATA", "USERS", "MOUNTPOINTMANAGER"]
+whitelist = ["SVCHOST.EXE", "ACLAYERS.DLL", "CMD.EXE", "SORTDEFAULT.NLS", "DESKTOP.INI", "EE.EXE", "EDO", "APPDATA", "USERS", "MOUNTPOINTMANAGER", "EN", "STATICCACHE.DAT", "OLEACCRC.DLL"]
 
 
 noExistFiles = []           #List of Files to be "delete" through BluePill
@@ -112,8 +112,10 @@ def calculateIterWeight(actualEvasionPath, initialLinenumber, initialFilesNumber
                 thread = line.split(":")[0]
                 if thread not in threads :
                     threads.append(thread)
-                    
-                command = line.split("[")[1].split("]")[0]
+                try:
+                    command = line.split("[")[1].split("]")[0]
+                except:
+                    command = ""
                 if command in GeneralCommandList.keys():
                     commandsWeight += GeneralCommandList[command]
                 if command in FileCommandList.keys():
@@ -176,6 +178,9 @@ def actionArtifactFile():
             if (path+"ag.txt").upper() in noExistFiles:
                 noExistFiles.remove((path+"ag.txt").upper())
                 writeBlackList()
+                FileDatabase[importantFile][1] = 1
+                FileDatabase[importantFile][3] = True
+                return importantFile
             f = open (path+"ag.txt", "w")
             f.write("Created by Artifact Generator")
             f.close()
@@ -183,6 +188,9 @@ def actionArtifactFile():
             if importantFile.upper() in noExistFiles:
                 noExistFiles.remove(importantFile.upper())
                 writeBlackList()
+                FileDatabase[importantFile][1] = 1
+                FileDatabase[importantFile][3] = True
+                return importantFile
             f = open (importantFile, "w")
             f.write("Created by Artifact Generator")
             f.close()
@@ -214,6 +222,9 @@ def restoreArtifact(LastTouchedFile):
             if (path+"ag.txt").upper() in noExistFiles:
                 noExistFiles.remove((path+"ag.txt").upper())
                 writeBlackList()
+                FileDatabase[LastTouchedFile][1] = 1
+                FileDatabase[LastTouchedFile][3] = True
+                return
             f = open (path+"ag.txt", "w")
             f.write("Created by Artifact Generator")
             f.close()
@@ -221,6 +232,9 @@ def restoreArtifact(LastTouchedFile):
             if LastTouchedFile.upper() in noExistFiles:
                 noExistFiles.remove(LastTouchedFile.upper())
                 writeBlackList()
+                FileDatabase[LastTouchedFile][1] = 1
+                FileDatabase[LastTouchedFile][3] = True
+                return
             f = open (LastTouchedFile, "w")
             f.write("Created by Artifact Generator")
             f.close()
@@ -306,11 +320,19 @@ while(True):
                 thread = line.split(":")[0]
                 if thread not in threads :
                     threads.append(thread)
-                    
-                command = line.split("[")[1].split("]")[0]
+                try:    
+                    command = line.split("[")[1].split("]")[0]
+                except:
+                    print("Error splitting line "+line)
+                    command = ""
                 if command in FileCommandList.keys():
-                    mode = line.split("[")[1].split("]")[1].split("-")[1].strip()
-                    targetFile = line.split("[")[1].split("]")[1].split("-")[2].strip()
+                    try:
+                        mode = line.split("[")[1].split("]")[1].split("--")[1].strip()
+                        targetFile = line.split("[")[1].split("]")[1].split("--")[2].strip()
+                    except:
+                         print("Error splitting commad "+command)
+                         targetFile = ""
+                    #print(targetFile)
                     if not inDatabase(targetFile) and len(targetFile) > 3 and "C:" in targetFile and not inWhiteList(targetFile.upper()) and targetFile[len(targetFile)-1] != "\\":
                         if "?" in targetFile:
                            targetFile = clearPath(targetFile)
