@@ -1,5 +1,6 @@
 import os
-import time
+from winreg import *
+
 
 BluePill_evasion_path = "C:/Pin311/Iterations/"             #Path of evasion.log files
 BluePill_blackList_path = "C:/Pin311/blacklist.txt"         #Path to blacklist file
@@ -34,6 +35,29 @@ FileNameList = {"VIRTUALBOX" : 5, "VBOX" : 5, "ORACLE" : 5, "GUEST" : 4, "PHYSIC
                 "FOOBAR" : 3,
                 "DRIVERS\\PRLETH" : 4, "DRIVERS\\PRLFS" : 4, "DRIVERS\\PRLMOUSE" : 4, "DRIVERS\\PRLVIDEO" : 4, "DRIVERS\\TIME" : 4,
                 "*.*" : 2}
+
+#Weighted Regkeys path
+RegKeyList = {"sandbox" : 5, "Hyper-V" : 5,
+              "VirtualMachine" : 5, "Virtual Machine" : 5,
+              "\\SYSTEM\\ControlSet001\\Services" : 5, "\\SYSTEM\\CurrentControlSet\\Enum\\PCI" : 5,
+              "\\SYSTEM\\CurrentControlSet\\Services\SbieDrv" : 5, "\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Sandboxie" : 5,
+              "\\SYSTEM\\CurrentControlSet\\Enum\\PCI\\VEN_80EE" : 5, "VBOX" : 5, "Vbox" : 5, "VirtualBox Guest Additions" :5, "Oracle" : 5,
+              "\\SYSTEM\\CurrentControlSet\\Enum\\PCI\\VEN_5333" : 5, "\\SYSTEM\\ControlSet001\\Services\\vpcbus" : 5, "\\SYSTEM\\ControlSet001\\Services\\vpc-s3" : 5, "\\SYSTEM\\ControlSet001\\Services\\vpcuhub" : 5,
+              "\\SYSTEM\\ControlSet001\\Services\\msvmmouf" : 5,
+              "\\SYSTEM\\CurrentControlSet\\Enum\\PCI\\VEN_15AD" : 5, "VMware" : 5, "vmware" : 5, "VMWARE" : 5, "vmdebug" : 5, "vmmouse" : 5, "VMTools" : 5, "VMMEMCTL" : 5, "vmci" : 5, "vmx86" : 5,
+              "Wine" : 4,
+              "xen" :4,
+              "\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion" : 3}
+
+#Weighted RegKeys Values (key : [Weight, Value])
+RegKeyValueList = {"\\HARDWARE\\Description\\System" : [4, "SystemBiosDate", "SystemProductName", "SystemBiosVersion", "VideoBiosVersion"],
+                   "\SOFTWARE\\Microsoft\\Windows\\CurrentVersion" : [3, "ProductID"], "\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion" :  [3, "ProductID"],
+                   "\\SYSTEM\\ControlSet001\\Services\\Disk\\Enum" :  [4, "DeviceDesc", "FriendlyName", "0", "1"], "\\SYSTEM\\ControlSet002\\Services\\Disk\\Enum" : [4,"DeviceDesc", "FriendlyName"], "\\SYSTEM\\ControlSet003\\Services\\Disk\\Enum" : [4, "DeviceDesc", "FriendlyName"],
+                   "\\SYSTEM\CurrentControlSet\\Control\\SystemInformation" : [4, "SystemProductName" ],
+                   "\\Installer\\Products" : [3, "ProductName"],
+                   "\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall" : [3, "DisplayName"],
+                   "{4D36E968-E325-11CE-BFC1-08002BE10318}" : [3, "CoInstallers32", "DriverDesc", "InfSection", "ProviderName", "Device Description"],
+                   "HKLM\\SYSTEM\\CurrentControlSet\\Control" : [3, "SystemProductName", "Service", "Device Description"]}
 
 #Weighted list of commands
 GeneralCommandList = {"IsDebuggerPresent" : 5, "CheckRemoteDebuggerPresent" : 5,
@@ -72,6 +96,7 @@ whitelist = ["SVCHOST.EXE", "ACLAYERS.DLL", "CMD.EXE", "SORTDEFAULT.NLS", "DESKT
 noExistFiles = []           #List of Files to be "delete" through BluePill
 
 FileDatabase = {}           #File: [weight, isPresent, endAction, flag]
+KeyDatabase = {}            #Key:  [weight, valueKey[], isPresent, endAction, flag]
 IterationDatabase = {}      #Iteration: [FileDatabase, weight]
 
 
@@ -82,7 +107,7 @@ def writeBlackList():
     f.close()
 
 
-def calculateWeight(command, mode, targetFile):
+def calculateWeightFile(command, mode, targetFile):
     valueCommand = FileCommandList[command]
     valueMode = 0
     if mode in ModeList.keys():
@@ -97,6 +122,21 @@ def calculateWeight(command, mode, targetFile):
                 valueName = FileNameList[n]
                 maxName = n
     return (valueCommand + valueMode + valueName)/3
+
+
+def calculateWeightKey(key, value):
+    valueKey = 2
+    valueValue = 0
+    for k in RegKeyList.keys():
+        if k in key:
+            valueKey = RegKeyList[k]
+
+    for k in RegKeyValueList.keys():
+        if k in key:
+            if value in RegKeyValueList[k]:
+                valueValue = RegKeyValueList[k][0]
+                return (valueKey + valueValue) / 2
+    return valueKey
 
 
 def calculateIterWeight(actualEvasionPath, initialLinenumber, initialFilesNumber, initialThreadsNumber):
@@ -143,8 +183,33 @@ def findFile(targetFile):
         if name in files:
             return 1
     return 0
-    
 
+
+def findKey(targetKey, valueKey):
+    try:
+        l = targetKey.split("\\")
+        aReg = None
+        key = ""
+        
+        if l[0] == "Machine" or l[0] == "MACHINE":
+             aReg = ConnectRegistry(None, HKEY_LOCAL_MACHINE)
+        if l[0] == "Root" or l[0] == "ROOT":
+            aReg = ConnectRegistry(None, HKEY_CLASSES_ROOT)
+        if l[0] == "User" or l[0] == "USER":
+            aReg = ConnectRegistry(None, HKEY_CURRENT_USER)
+
+        key = "".join(str(elem)+"\\" for elem in l[1:len(l)]).strip()
+        k = OpenKey(aReg, key)
+        
+        if valueKey == "":
+            return 1
+        else:
+            value = QueryValueEx(k, valueKey)
+            return 1
+    except:
+        return 0
+    
+    
 def actionArtifactFile():
     importantFile = ""
     maxWeight = 0
@@ -277,6 +342,33 @@ def clearPath(targetFile):
     return path 
 
 
+def ClearKey(targetKey):
+    l = targetKey.split("\\")
+    ret = ""
+    if l[1] == "Registry" or l[1] == "REGISTRY":
+        if l[2] == "Machine" or l[2] == "MACHINE":
+            l[3] = l[3].upper()
+        if l[2] == "Root" or l[2] == "ROOT":
+            l[3] = l[3].upper()
+        if l[2] == "User" or l[2] == "USER":
+            l[3] = l[3].upper()
+        for elem in  l[2:len(l)]:
+            if elem != l[len(l)-1]:
+                ret += str(elem)+"\\"
+            else:
+                ret += str(elem)
+        return ret
+    else:
+        l[0] = l[0].upper()
+        s = "Machine\\"
+        for elem in  l[0:len(l)]:
+            if elem != l[len(l)-1]:
+                ret += str(elem)+"\\"
+            else:
+                ret += str(elem)
+        return s+ret
+
+
 def getBestIteration():
     maxx = 0
     best = 0
@@ -287,32 +379,62 @@ def getBestIteration():
     return best
 
 
-def inWhiteList(file):
+def inWhiteListFile(file):
     l = file.split("\\")
     name = l[len(l)-1]
     return name in whitelist
 
-def inDatabase(file):
+
+def inDatabaseFile(file):
     if file not in FileDatabase.keys():        
         return clearPath(file) in FileDatabase.keys()
     return True
 
+def inDatabaseKey(key):
+    if key not in KeyDatabase.keys():        
+        return clearPath(key) in KeyDatabase.keys()
+    return True
 
 
-iteration = 0
-LastTouchedFile = ""
+def getCommand(line):
+    command = ""
+    try:    
+        command = line.split("[")[1].split("]")[0]
+    except:
+        print("Error splitting line "+line)
+        command = ""
+    return command
+
+
+def controlKey(targetKey):
+    try:
+        l =  targetKey.split("\\")
+        return not inDatabaseKey(targetKey) and len(l) > 4 and l[len(l)-1] != "\\"
+    except:
+        return False
+
+def controlFile(targetFile):
+    return not inDatabaseFile(targetFile) and len(targetFile) > 3 and "C:" in targetFile and not inWhiteListFile(targetFile.upper()) and targetFile[len(targetFile)-1] != "\\"
+
+
+
+
+iteration = 0                                                                                                   #Number of AG Iteration
+LastTouchedFile = ""                                                                                            #Last modified File
+keyFlag = False                                                                                                 #Flag used to save the key values
 print("ArtifactGenerator")
 print("")
 while(True):
-    os.system("cd C:/Pin311 & pin -follow_execv -t bluepill32 -evasions -iter "+str(iteration)+" -- ee.exe")
-    #time.sleep(5)
-    actualEvasionPath = BluePill_evasion_path + str(iteration) + "/"
+    os.system("cd C:/Pin311 & pin -follow_execv -t bluepill32 -evasions -iter "+str(iteration)+" -- ee.exe")    #BluePill Execution Command
+    actualEvasionPath = BluePill_evasion_path + str(iteration) + "/"                                            #Path of current evasion.log
 
-    FilesNumber = 0
-    LinesNumber = 0
-    threads = []
+    FilesNumber = 0                                                                                             #Number if files in folder (Different Processes)
+    LinesNumber = 0                                                                                             #Number of lines (Commands) in the file
+    threads = []                                                                                                #Number of different Treads ina file (Process)
 
-    for file in os.listdir(actualEvasionPath):
+    targetKey = ""
+    
+    for file in os.listdir(actualEvasionPath):                                                                  #Read all files in the folder
         if "evasion" in file:
             f = open (actualEvasionPath + file,"r")
             line = f.readline()
@@ -320,36 +442,64 @@ while(True):
                 thread = line.split(":")[0]
                 if thread not in threads :
                     threads.append(thread)
-                try:    
-                    command = line.split("[")[1].split("]")[0]
-                except:
-                    print("Error splitting line "+line)
-                    command = ""
-                if command in FileCommandList.keys():
+                    
+                command = getCommand(line)                                                                      #Get the Command
+                
+                #-------NTOPENKEY Case--------------------------------------------------------------------------------------------------------------------------
+                if command == "NtOpenKey":                                                                      #REGKEY CASE
+                    l = 1
                     try:
-                        mode = line.split("[")[1].split("]")[1].split("--")[1].strip()
-                        targetFile = line.split("[")[1].split("]")[1].split("--")[2].strip()
+                        targetKey = line.split("--")[2].strip()
                     except:
-                         print("Error splitting commad "+command)
+                        print("Error splitting REGKEY commad "+command)
+                        targetKey = ""
+
+                    if controlKey(targetKey):                                                                   #Verify the Key Correctness
+                        targetKey = ClearKey(targetKey)
+                        isPresent = findKey(targetKey,"")                                                       #Verify if the Key is present
+                        weight = calculateWeightKey(targetKey, "")                                              #Calculate the Key Weight
+                        KeyDatabase[targetKey] = [weight, [], [isPresent], None, False]                         #Add key to Database
+                        keyFlag = True                
+                
+                #--------FILE Case-------------------------------------------------------------------------------------------------------------------------------                                                                 
+                elif command in FileCommandList.keys():
+                    try:
+                        mode = line.split("[")[1].split("]")[1].split("--")[1].strip()                          #Get the open modality (Read, Open, ...)
+                        targetFile = line.split("[")[1].split("]")[1].split("--")[2].strip()                    #Get the File path
+                    except:
+                         print("Error splitting FILE commad "+command)
                          targetFile = ""
-                    #print(targetFile)
-                    if not inDatabase(targetFile) and len(targetFile) > 3 and "C:" in targetFile and not inWhiteList(targetFile.upper()) and targetFile[len(targetFile)-1] != "\\":
+                    if controlFile(targetFile):                                                                 #Verify the File Correctness
                         if "?" in targetFile:
                            targetFile = clearPath(targetFile)
-                        weight = calculateWeight(command, mode, targetFile)
+                        weight = calculateWeightFile(command, mode, targetFile)                                 #Calculate the File Weight
                         try:    
-                            isPresent = findFile(targetFile)
-                            FileDatabase[targetFile] = [weight, isPresent, None, False]
+                            isPresent = findFile(targetFile)                                                    #Verify if the File is present
+                            FileDatabase[targetFile] = [weight, isPresent, None, False]                         #Add File to Database
                         except:
                             print("Error file: "+targetFile)
-                        
+                            
+                #---------NTQUERYVALUEKEY Case---------------------------------------------------------------------------------------------------------------------
+                if command == "NtQueryValueKey" and keyFlag:
+                    valueKey = line.split("--")[1].strip()                                                      #Get the Query Value
+                    KeyDatabase[targetKey][1].append(valueKey)                                                  #Update the Key Database
+                    isPresent = findKey(targetKey, valueKey)                                                    #Verify if the Value is present
+                    KeyDatabase[targetKey][2].append(isPresent)                                                 #Update the Key Database
+                    weight = calculateWeightKey(targetKey, valueKey)                                            #Calculate the Key Weight
+                    KeyDatabase[targetKey][0] = weight                                                          #Update the Key Database
+
+                elif command != "NtOpenKey":
+                    keyFlag = False
+                
+                
                 LinesNumber += 1    
                 line = f.readline()
             f.close()
         FilesNumber += 1
 
-    if len(FileDatabase) == 0:
-        print("No file queries")
+    
+    if len(FileDatabase) == 0 and len(KeyDatabase):                                                             #Case of no Files and no Keys
+        print("No file and Keys queries")
         break
     
     iterationWeight = calculateIterWeight(actualEvasionPath, LinesNumber, FilesNumber, len(threads))
