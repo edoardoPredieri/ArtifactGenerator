@@ -96,7 +96,7 @@ whitelist = ["SVCHOST.EXE", "ACLAYERS.DLL", "CMD.EXE", "SORTDEFAULT.NLS", "DESKT
 noExistFiles = []           #List of Files to be "delete" through BluePill
 
 FileDatabase = {}           #File: [weight, isPresent, endAction, flag]
-KeyDatabase = {}            #Key:  [weight, valueKey[], isPresent, endAction, flag]
+KeyDatabase = {}            #Key:  [weight, valueKey[], isPresent[], endAction[], flag[]]
 IterationDatabase = {}      #Iteration: [FileDatabase, weight]
 
 
@@ -164,9 +164,7 @@ def calculateIterWeight(actualEvasionPath, initialLinenumber, initialFilesNumber
                 linesNumber += 1
                 line = f.readline()
             f.close()
-
         endFilesNumber += 1 
-
     FilesNumberDiff = endFilesNumber - initialFilesNumber          #Processes Number Difference
     ThreadsNumberDiff =  len(threads) - initialThreadsNumber       #Threads Number Difference
     lineNumberDiff = linesNumber - initialLinenumber               #Lines Number Difference
@@ -189,146 +187,319 @@ def findKey(targetKey, valueKey):
     try:
         l = targetKey.split("\\")
         aReg = None
-        key = ""
-        
         if l[0] == "Machine" or l[0] == "MACHINE":
              aReg = ConnectRegistry(None, HKEY_LOCAL_MACHINE)
         if l[0] == "Root" or l[0] == "ROOT":
             aReg = ConnectRegistry(None, HKEY_CLASSES_ROOT)
         if l[0] == "User" or l[0] == "USER":
             aReg = ConnectRegistry(None, HKEY_CURRENT_USER)
-
         key = "".join(str(elem)+"\\" for elem in l[1:len(l)]).strip()
+        
         k = OpenKey(aReg, key)
         
         if valueKey == "":
+            CloseKey(k)
             return 1
         else:
             value = QueryValueEx(k, valueKey)
+            CloseKey(k)
             return 1
     except:
         return 0
     
     
-def actionArtifactFile():
+def actionArtifact():
     importantFile = ""
-    maxWeight = 0
+    importantKey = ""
+    importantValue = ""
+    maxWeightFile = 0
+    maxWeightKey = 0
+ 
     if len(FileDatabase) > 0:
         for i in FileDatabase.keys():
-            if FileDatabase[i][0] > maxWeight and not FileDatabase[i][3]:
-                maxWeight = FileDatabase[i][0]
+            if FileDatabase[i][0] > maxWeightFile and not FileDatabase[i][3]:
+                maxWeightFile = FileDatabase[i][0]
                 importantFile = i
+
+    if len(KeyDatabase) > 0:
+        for i in KeyDatabase.keys():
+            if len(KeyDatabase[i][1]) > 0:
+                for j in range(len(KeyDatabase[i][1])):
+                    if KeyDatabase[i][0] > maxWeightKey and not KeyDatabase[i][4][j+1]:
+                        maxWeightKey = KeyDatabase[i][0]
+                        importantValue = KeyDatabase[i][1][j]
+                        importantKey = i
+            else:
+                if KeyDatabase[i][0] > maxWeightKey and not KeyDatabase[i][4][0]:
+                    maxWeightKey = KeyDatabase[i][0]
+                    importantKey = i
+                    
+    if importantFile == "" and importantKey == "":
+        print("Error: actionArtifact")
+        print(KeyDatabase)
+        return None, None
+
+    if maxWeightFile >= maxWeightKey:
+        if FileDatabase[importantFile][1] == 1:
+             print("Deleting: "+importantFile+"...")
+             l = importantFile.split("\\")
+             name = l[len(l)-1]
+             path = "".join(str(elem)+"\\\\" for elem in l[0:len(l)-1]).strip()
+             if name == "*.*":
+                 noExistFiles.append((path+"ag.txt").upper())
+                 writeBlackList()
+             else:
+                 noExistFiles.append(importantFile.upper())
+                 writeBlackList()
+             FileDatabase[importantFile][1] = 0
+        else:
+            print("Creating: "+importantFile+"...")
+            l = importantFile.split("\\")
+            name = l[len(l)-1]
+            path = "".join(str(elem)+"\\\\" for elem in l[0:len(l)-1]).strip()
+            if name == "*.*":
+                if (path+"ag.txt").upper() in noExistFiles:
+                    noExistFiles.remove((path+"ag.txt").upper())
+                    writeBlackList()
+                    FileDatabase[importantFile][1] = 1
+                    FileDatabase[importantFile][3] = True
+                    return importantFile
+                f = open (path+"ag.txt", "w")
+                f.write("Created by Artifact Generator")
+                f.close()
+            else:
+                if importantFile.upper() in noExistFiles:
+                    noExistFiles.remove(importantFile.upper())
+                    writeBlackList()
+                    FileDatabase[importantFile][1] = 1
+                    FileDatabase[importantFile][3] = True
+                    return importantFile
+                f = open (importantFile, "w")
+                f.write("Created by Artifact Generator")
+                f.close()
+            FileDatabase[importantFile][1] = 1
+
+        FileDatabase[importantFile][3] = True
+        return importantFile, None
+            
     else:
-        print("Error")
-        return
+        if len(KeyDatabase[importantKey][1]) == 0:
+            if KeyDatabase[importantKey][2][0] == 1:
+                print("Deleting: "+importantKey+"...")
+                #noExistKeys.append(importantKey.upper())
+                #writeBlackList() !!!
+                KeyDatabase[importantKey][2][0] = 0
+            else:
+                print("Creating: "+importantKey+"...")
+                #if importantKey.upper() in noExistKey:
+                    #noExistKey.remove(importantKey.upper())
+                    #writeBlackList()
+                
+                    #KeyDatabase[importantKey][2][0] = 1
+                    #KeyDatabase[importantKey][4] = True
+                    #return importantKey
 
-    if FileDatabase[importantFile][1] == 1:
-         print("Deleting: "+importantFile+"...")
-         l = importantFile.split("\\")
-         name = l[len(l)-1]
-         path = "".join(str(elem)+"\\\\" for elem in l[0:len(l)-1]).strip()
-         if name == "*.*":
-             noExistFiles.append((path+"ag.txt").upper())
-             writeBlackList()
-         else:
-             noExistFiles.append(importantFile.upper())
-             writeBlackList()
-         FileDatabase[importantFile][1] = 0
+                l = importantKey.split("\\")
+               # k = "".join(str(elem)+"\\" for elem in l[1:len(l)]).strip()
+                #if l[0] == "Machine" or l[0] == "MACHINE":
+                 #   CreateKey(HKEY_LOCAL_MACHINE, k)
+                #if l[0] == "Root" or l[0] == "ROOT":
+                 #   CreateKey(HKEY_CLASSES_ROOT, k)
+                #if l[0] == "User" or l[0] == "USER":
+                 #   CreateKey(HKEY_CURRENT_USER, k)
+
+                #KeyDatabase[importantKey][2][0] = 1
+                 
+            KeyDatabase[importantKey][4][0] = True
+            return importantKey, None
+
+        else:
+            pos = (KeyDatabase[importantKey][1]).index(importantValue) + 1
+            if KeyDatabase[importantKey][2][pos] == 1:
+                print("Deleting: "+importantKey+"  "+importantValue+"...")
+                #noExistKeys.append(importantKey.upper())
+                #writeBlackList() !!!
+                KeyDatabase[importantKey][2][pos] = 0
+            else:
+                print("Creating: "+importantKey+"  "+importantValue+"...")
+
+                l = importantKey.split("\\")
+                k = "".join(str(elem)+"\\" for elem in l[1:len(l)]).strip()
+                aReg = None
+                if l[0] == "Machine" or l[0] == "MACHINE":
+                    aReg = ConnectRegistry(None, HKEY_LOCAL_MACHINE)
+                if l[0] == "Root" or l[0] == "ROOT":
+                    aReg = ConnectRegistry(None, HKEY_CLASSES_ROOT)
+                if l[0] == "User" or l[0] == "USER":
+                    aReg = ConnectRegistry(None, HKEY_CURRENT_USER)
+
+               # k = OpenKey(aReg, key)
+                #SetValueEx(k, importantValue, 0, REG_SZ, 1)
+                #CloseKey(k)
+                
+                KeyDatabase[importantKey][2][pos] = 1
+
+            KeyDatabase[importantKey][4][pos] = True
+            return importantKey, importantValue
+
+        
+def restoreArtifact(LastTouchedElem, LastTouchedValue):
+    if LastTouchedElem in FileDatabase.keys():
+        if FileDatabase[LastTouchedElem][1] == 1:
+            l = LastTouchedElem.split("\\")
+            name = l[len(l)-1]
+            path = "".join(str(elem)+"\\\\" for elem in l[0:len(l)-1]).strip()
+            if name == "*.*":
+                noExistFiles.append((path+"ag.txt").upper())
+                writeBlackList()
+            else:
+                noExistFiles.append(LastTouchedElem.upper())
+                writeBlackList()
+            FileDatabase[LastTouchedElem][1] = 0
+        else:
+            print("Creating: "+LastTouchedElem+"...")
+            l = LastTouchedElem.split("\\")
+            name = l[len(l)-1]
+            path = "".join(str(elem)+"\\\\" for elem in l[0:len(l)-1]).strip()
+            if name == "*.*":
+                if (path+"ag.txt").upper() in noExistFiles:
+                    noExistFiles.remove((path+"ag.txt").upper())
+                    writeBlackList()
+                    FileDatabase[LastTouchedElem][1] = 1
+                    FileDatabase[LastTouchedElem][3] = True
+                    return
+                f = open (path+"ag.txt", "w")
+                f.write("Created by Artifact Generator")
+                f.close()
+            else:
+                if LastTouchedElem.upper() in noExistFiles:
+                    noExistFiles.remove(LastTouchedElem.upper())
+                    writeBlackList()
+                    FileDatabase[LastTouchedElem][1] = 1
+                    FileDatabase[LastTouchedElem][3] = True
+                    return
+                f = open (LastTouchedFile, "w")
+                f.write("Created by Artifact Generator")
+                f.close()
+            FileDatabase[LastTouchedElem][1] = 1
+
+        FileDatabase[LastTouchedElem][3] = True
+
     else:
-        print("Creating: "+importantFile+"...")
-        l = importantFile.split("\\")
-        name = l[len(l)-1]
-        path = "".join(str(elem)+"\\\\" for elem in l[0:len(l)-1]).strip()
-        if name == "*.*":
-            if (path+"ag.txt").upper() in noExistFiles:
-                noExistFiles.remove((path+"ag.txt").upper())
-                writeBlackList()
-                FileDatabase[importantFile][1] = 1
-                FileDatabase[importantFile][3] = True
-                return importantFile
-            f = open (path+"ag.txt", "w")
-            f.write("Created by Artifact Generator")
-            f.close()
+        if len(KeyDatabase[LastTouchedElem][1]) == 0:
+            if KeyDatabase[LastTouchedElem][2][0] == 1:
+                print("Deleting: "+LastTouchedElem+"...")
+                #noExistKeys.append(importantKey.upper())
+                #writeBlackList() !!!
+                KeyDatabase[LastTouchedElem][2][0] = 0
+            else:
+                print("Creating: "+LastTouchedElem+"...")
+                #if importantKey.upper() in noExistKey:
+                    #noExistKey.remove(importantKey.upper())
+                    #writeBlackList()
+                
+                    #KeyDatabase[importantKey][2][0] = 1
+                    #KeyDatabase[importantKey][4] = True
+                    #return importantKey
+
+                l = LastTouchedElem.split("\\")
+                #k = "".join(str(elem)+"\\" for elem in l[1:len(l)]).strip()
+                #if l[0] == "Machine" or l[0] == "MACHINE":
+                 #   CreateKey(HKEY_LOCAL_MACHINE, k)
+                #if l[0] == "Root" or l[0] == "ROOT":
+                 #   CreateKey(HKEY_CLASSES_ROOT, k)
+                #if l[0] == "User" or l[0] == "USER":
+                 #   CreateKey(HKEY_CURRENT_USER, k)
+
+                KeyDatabase[LastTouchedElem][2][0] = 1
+        
         else:
-            if importantFile.upper() in noExistFiles:
-                noExistFiles.remove(importantFile.upper())
-                writeBlackList()
-                FileDatabase[importantFile][1] = 1
-                FileDatabase[importantFile][3] = True
-                return importantFile
-            f = open (importantFile, "w")
-            f.write("Created by Artifact Generator")
-            f.close()
-        FileDatabase[importantFile][1] = 1
+            pos = (KeyDatabase[LastTouchedElem][1]).index(LastTouchedValue) + 1
+            if KeyDatabase[LastTouchedElem][2][pos] == 1:
+                print("Deleting: "+LastTouchedElem+"  "+LastTouchedValue+"...")
+                #noExistKeys.append(importantKey.upper())
+                #writeBlackList() !!!
+                KeyDatabase[LastTouchedElem][2][pos] = 0
+            else:
+                print("Creating: "+LastTouchedElem+"  "+LastTouchedValue+"...")
 
-    FileDatabase[importantFile][3] = True
-    return importantFile
+                l = LastTouchedElem.split("\\")
+                k = "".join(str(elem)+"\\" for elem in l[1:len(l)]).strip()
+                aReg = None
+                if l[0] == "Machine" or l[0] == "MACHINE":
+                    aReg = ConnectRegistry(None, HKEY_LOCAL_MACHINE)
+                if l[0] == "Root" or l[0] == "ROOT":
+                    aReg = ConnectRegistry(None, HKEY_CLASSES_ROOT)
+                if l[0] == "User" or l[0] == "USER":
+                    aReg = ConnectRegistry(None, HKEY_CURRENT_USER)
+
+                #k = OpenKey(aReg, key)
+                #SetValueEx(k, LastTouchedValue, 0, REG_SZ, 1)
+                #CloseKey(k)
+                KeyDatabase[LastTouchedElem][2][pos] = 1
+            KeyDatabase[LastTouchedElem][4][pos] = True
+            
 
 
-def restoreArtifact(LastTouchedFile):
-    if FileDatabase[LastTouchedFile][1] == 1:
-        print("Deleting: "+LastTouchedFile+"...")
-        l = LastTouchedFile.split("\\")
-        name = l[len(l)-1]
-        path = "".join(str(elem)+"\\\\" for elem in l[0:len(l)-1]).strip()
-        if name == "*.*":
-            noExistFiles.append((path+"ag.txt").upper())
-            writeBlackList()
-        else:
-            noExistFiles.append(LastTouchedFile.upper())
-            writeBlackList()
-        FileDatabase[LastTouchedFile][1] = 0
+def validationElem(elem, value, mode):
+    if elem in FileDatabase.keys():
+        if mode == 0:                                       #Better Case
+            if FileDatabase[elem][1] == 1:
+                FileDatabase[elem][2] = "To be Created"
+            else:
+                FileDatabase[elem][2] = "To be Deleted"
+        elif mode == 1:                                     #Equal Case
+            FileDatabase[elem][2] = "No modification"
+        else:                                               #Worse Case
+            if FileDatabase[elem][1] == 0:
+                FileDatabase[elem][2] = "To be Created"
+            else:
+                FileDatabase[elem][2] = "To be Deleted"
     else:
-        print("Creating: "+LastTouchedFile+"...")
-        l = LastTouchedFile.split("\\")
-        name = l[len(l)-1]
-        path = "".join(str(elem)+"\\\\" for elem in l[0:len(l)-1]).strip()
-        if name == "*.*":
-            if (path+"ag.txt").upper() in noExistFiles:
-                noExistFiles.remove((path+"ag.txt").upper())
-                writeBlackList()
-                FileDatabase[LastTouchedFile][1] = 1
-                FileDatabase[LastTouchedFile][3] = True
-                return
-            f = open (path+"ag.txt", "w")
-            f.write("Created by Artifact Generator")
-            f.close()
+        if value:
+            pos = (KeyDatabase[elem][1]).index(value) + 1
+            if mode == 0:                                       #Better Case
+                if KeyDatabase[elem][2][pos] == 1:
+                    KeyDatabase[elem][3][pos] = "To be Created"
+                else:
+                    KeyDatabase[elem][3][pos] = ("To be Deleted")
+            elif mode == 1:                                     #Equal Case
+                KeyDatabase[elem][3][pos] = ("No modification")
+            else:                                               #Worse Case
+                if KeyDatabase[elem][2][pos] == 0:
+                    KeyDatabase[elem][3][pos] = ("To be Created")
+                else:
+                    KeyDatabase[elem][3][pos] = ("To be Deleted")
         else:
-            if LastTouchedFile.upper() in noExistFiles:
-                noExistFiles.remove(LastTouchedFile.upper())
-                writeBlackList()
-                FileDatabase[LastTouchedFile][1] = 1
-                FileDatabase[LastTouchedFile][3] = True
-                return
-            f = open (LastTouchedFile, "w")
-            f.write("Created by Artifact Generator")
-            f.close()
-        FileDatabase[LastTouchedFile][1] = 1
-
-    FileDatabase[LastTouchedFile][3] = True
-
-
-def validationFile(file, mode):
-    if mode == 0:                                       #Better Case
-        if FileDatabase[file][1] == 1:
-            FileDatabase[file][2] = "To be Created"
-        else:
-            FileDatabase[file][2] = "To be Deleted"
-    elif mode == 1:                                     #Equal Case
-        FileDatabase[file][2] = "No modification"
-    else:                                               #Worse Case
-        if FileDatabase[file][1] == 0:
-            FileDatabase[file][2] = "To be Created"
-        else:
-            FileDatabase[file][2] = "To be Deleted"
-
+            if mode == 0:                                       #Better Case
+                if KeyDatabase[elem][2][0] == 1:
+                    KeyDatabase[elem][3][0] = "To be Created"
+                else:
+                    KeyDatabase[elem][3][0] = "To be Deleted"
+            elif mode == 1:                                     #Equal Case
+                KeyDatabase[elem][3][0] = "No modification"
+            else:                                               #Worse Case
+                if KeyDatabase[elem][2][0] == 0:
+                    KeyDatabase[elem][3][0] = "To be Created"
+                else:
+                    KeyDatabase[elem][3][0] = "To be Deleted"
 
 
 def exitCase():
-    for i in FileDatabase.keys():
-        if FileDatabase[i][2] == None:
+    for file in FileDatabase.keys():
+        if FileDatabase[file][2] == None:
             return False
+
+    for key in KeyDatabase.keys():
+        if len(KeyDatabase[key][1]) > 0:
+            for j in range(len(KeyDatabase[key][1])):
+                if KeyDatabase[key][3][j+1] == "":
+                    return False
+        else:
+            if KeyDatabase[key][3][0] == "":
+                    return False
     return True
+
 
 
 def clearPath(targetFile):
@@ -373,8 +544,8 @@ def getBestIteration():
     maxx = 0
     best = 0
     for i in IterationDatabase.keys():
-        if IterationDatabase[i][1] > maxx:
-            maxx = IterationDatabase[i][1]
+        if IterationDatabase[i][2] > maxx:
+            maxx = IterationDatabase[i][2]
             best = i
     return best
 
@@ -391,9 +562,7 @@ def inDatabaseFile(file):
     return True
 
 def inDatabaseKey(key):
-    if key not in KeyDatabase.keys():        
-        return clearPath(key) in KeyDatabase.keys()
-    return True
+    return ClearKey(key) in KeyDatabase.keys() 
 
 
 def getCommand(line):
@@ -420,8 +589,9 @@ def controlFile(targetFile):
 
 
 iteration = 0                                                                                                   #Number of AG Iteration
-LastTouchedFile = ""                                                                                            #Last modified File
-keyFlag = False                                                                                                 #Flag used to save the key values
+LastTouchedElement = ""                                                                                         #Last modified Element
+LastTouchedValue = ""                                                                                           #Last modified Key Value
+                                                                                        
 print("ArtifactGenerator")
 print("")
 while(True):
@@ -432,6 +602,7 @@ while(True):
     LinesNumber = 0                                                                                             #Number of lines (Commands) in the file
     threads = []                                                                                                #Number of different Treads ina file (Process)
 
+    keyFlag = False                                                                                             #Flag used to save the key values
     targetKey = ""
     
     for file in os.listdir(actualEvasionPath):                                                                  #Read all files in the folder
@@ -449,16 +620,16 @@ while(True):
                 if command == "NtOpenKey":                                                                      #REGKEY CASE
                     l = 1
                     try:
-                        targetKey = line.split("--")[2].strip()
+                        key = line.split("--")[2].strip()
                     except:
                         print("Error splitting REGKEY commad "+command)
-                        targetKey = ""
+                        key = ""
 
-                    if controlKey(targetKey):                                                                   #Verify the Key Correctness
-                        targetKey = ClearKey(targetKey)
+                    if controlKey(key):                                                                   #Verify the Key Correctness
+                        targetKey = ClearKey(key)
                         isPresent = findKey(targetKey,"")                                                       #Verify if the Key is present
                         weight = calculateWeightKey(targetKey, "")                                              #Calculate the Key Weight
-                        KeyDatabase[targetKey] = [weight, [], [isPresent], None, False]                         #Add key to Database
+                        KeyDatabase[targetKey] = [weight, [], [isPresent], [""], [False]]                       #Add key to Database
                         keyFlag = True                
                 
                 #--------FILE Case-------------------------------------------------------------------------------------------------------------------------------                                                                 
@@ -485,8 +656,10 @@ while(True):
                     KeyDatabase[targetKey][1].append(valueKey)                                                  #Update the Key Database
                     isPresent = findKey(targetKey, valueKey)                                                    #Verify if the Value is present
                     KeyDatabase[targetKey][2].append(isPresent)                                                 #Update the Key Database
+                    KeyDatabase[targetKey][3].append("")
                     weight = calculateWeightKey(targetKey, valueKey)                                            #Calculate the Key Weight
                     KeyDatabase[targetKey][0] = weight                                                          #Update the Key Database
+                    KeyDatabase[targetKey][4].append(False)
 
                 elif command != "NtOpenKey":
                     keyFlag = False
@@ -498,38 +671,40 @@ while(True):
         FilesNumber += 1
 
     
-    if len(FileDatabase) == 0 and len(KeyDatabase):                                                             #Case of no Files and no Keys
+    if len(FileDatabase) == 0 and len(KeyDatabase) == 0:                                                        #Case of no Files and no Keys
         print("No file and Keys queries")
         break
     
-    iterationWeight = calculateIterWeight(actualEvasionPath, LinesNumber, FilesNumber, len(threads))
-    IterationDatabase[iteration] = [FileDatabase.copy(), iterationWeight]
-
-    if iteration == 0 or IterationDatabase[iteration][1] > IterationDatabase[iteration-1][1]:
+    iterationWeight = calculateIterWeight(actualEvasionPath, LinesNumber, FilesNumber, len(threads))            #Calculate the Iteration Weight
+    IterationDatabase[iteration] = [FileDatabase.copy(), KeyDatabase.copy(), iterationWeight]                   #Save the actual Iteration
+    
+    if iteration == 0 or IterationDatabase[iteration][2] > IterationDatabase[iteration-1][2]:
         print("BETTER THAN PREVIOUS ITERATION")
         if iteration > 0:
-            validationFile(LastTouchedFile, 0)
+            validationElem(LastTouchedElement, LastTouchedValue, 0)
         if iteration > 0 and exitCase():
             break
-        LastTouchedFile = actionArtifactFile()
-    elif IterationDatabase[iteration][1] == IterationDatabase[iteration-1][1]:
+        LastTouchedElement, LastTouchedValue = actionArtifact()
+    elif IterationDatabase[iteration][2] == IterationDatabase[iteration-1][2]:
         print("EQUAL TO PREVIOUS ITERATION")
-        validationFile(LastTouchedFile, 1)
+
+        restoreArtifact(LastTouchedElement, LastTouchedValue)
+        validationElem(LastTouchedElement, LastTouchedValue, 1)
+        
         if iteration > 0 and exitCase():
             break
-        restoreArtifact(LastTouchedFile)
-        LastTouchedFile = actionArtifactFile()
+        
+        LastTouchedElement, LastTouchedValue = actionArtifact()
     else:
         print("WORSE THAN PREVIOUS ITERATION")
-        validationFile(LastTouchedFile, 2)
+        validationElem(LastTouchedElement, LastTouchedValue, 2)
         if iteration > 0 and exitCase():
             break
-        restoreArtifact(LastTouchedFile)
+        restoreArtifact(LastTouchedElement, LastTouchedValue)
         
     iteration += 1
 
-
-try:
+try:    #pritn also keys !!!!!!!!!!!!!!!!!!!!!!!
     f = open("report.txt","w")
     f.close()
     f = open("report.txt","a")
