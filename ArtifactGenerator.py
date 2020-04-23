@@ -3,7 +3,9 @@ from winreg import *
 
 
 BluePill_evasion_path = "C:/Pin311/Iterations/"             #Path of evasion.log files
-BluePill_blackList_path = "C:/Pin311/blacklist.txt"         #Path to blacklist file
+BluePill_blackListFile_path = "C:/Pin311/blacklistFile.txt" #Path to blacklist file
+BluePill_blackListKey_path = "C:/Pin311/blacklistKey.txt"   #Path to blacklist key
+
 
 #Weighted list of file manipulation commands
 FileCommandList = {"CreateFile" : 1, "CreateFileA" : 1, "CreateFileW" : 1,
@@ -89,21 +91,42 @@ GeneralCommandList = {"IsDebuggerPresent" : 5, "CheckRemoteDebuggerPresent" : 5,
                       "NtQueryDO" : 2,
                       "NtOpenKey" : 2, "NtEnumerateKey" :2 , "NtQueryValueKey":2 , "NtQueryAttributesFile" :2}
 
-#List of files to not modificate
-whitelist = ["SVCHOST.EXE", "ACLAYERS.DLL", "CMD.EXE", "SORTDEFAULT.NLS", "DESKTOP.INI", "EE.EXE", "EDO", "APPDATA", "USERS", "MOUNTPOINTMANAGER", "EN", "STATICCACHE.DAT", "OLEACCRC.DLL"]
-
+#List of Files to not modificate
+whitelistFile = ["SVCHOST.EXE", "ACLAYERS.DLL", "CMD.EXE", "SORTDEFAULT.NLS", "DESKTOP.INI", "EE.EXE", "EDO", "APPDATA", "USERS", "MOUNTPOINTMANAGER", "EN", "STATICCACHE.DAT", "OLEACCRC.DLL"]
+#List of Keys to not modificate
+whitelistKey = ["MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Session Manager", "Machine\\SYSTEM\\CurrentControlSet\\Control\\Session Manager", "\\REGISTRY\\MACHINE", "Machine\\SOFTWARE\\Policies\\Microsoft\\Windows\\Safer\\CodeIdentifiers",
+                "Machine\\SYSTEM\\CurrentControlSet\\Control\\Nls\\Sorting\\Versions", "MACHINE\SYSTEM\CurrentControlSet\Control\SafeBoot\Option", "\Registry\Machine\System\CurrentControlSet\Control\Srp\GP\DLL", "Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Diagnostics",
+                "Machine\SYSTEM\CurrentControlSet\Control\Srp\GP\DLL", "USER\S-1-5-21-3859524018-1065375656-672923527-1001\Software\Policies\Microsoft\Windows\Safer\CodeIdentifiers"]
 
 noExistFiles = []           #List of Files to be "delete" through BluePill
+noExistKeys = []            #List of Keys to be "delete" through BluePill
 
 FileDatabase = {}           #File: [weight, isPresent, endAction, flag]
 KeyDatabase = {}            #Key:  [weight, valueKey[], isPresent[], endAction[], flag[]]
 IterationDatabase = {}      #Iteration: [FileDatabase, weight]
 
 
-def writeBlackList():
-    f = open(BluePill_blackList_path,"w")
+def writeBlackListFile():
+    f = open(BluePill_blackListFile_path,"w")
     for i in noExistFiles:
         f.write(i+'\n')
+    f.close()
+
+
+def writeBlackListKey():
+    f = open(BluePill_blackListKey_path,"w")
+    for i in noExistKeys:
+        l = i.split("\\")
+        s=""
+        if len(l)>1:
+            for elem in  l[1:len(l)]:
+                if elem != l[len(l)-1]:
+                    s += str(elem)+"\\"
+                else:
+                    s += str(elem)
+            f.write(s+'\n')
+        else:
+            f.write(i+'\n')
     f.close()
 
 
@@ -247,10 +270,10 @@ def actionArtifact():
              path = "".join(str(elem)+"\\\\" for elem in l[0:len(l)-1]).strip()
              if name == "*.*":
                  noExistFiles.append((path+"ag.txt").upper())
-                 writeBlackList()
+                 writeBlackListFile()
              else:
                  noExistFiles.append(importantFile.upper())
-                 writeBlackList()
+                 writeBlackListFile()
              FileDatabase[importantFile][1] = 0
         else:
             print("Creating: "+importantFile+"...")
@@ -260,7 +283,7 @@ def actionArtifact():
             if name == "*.*":
                 if (path+"ag.txt").upper() in noExistFiles:
                     noExistFiles.remove((path+"ag.txt").upper())
-                    writeBlackList()
+                    writeBlackListFile()
                     FileDatabase[importantFile][1] = 1
                     FileDatabase[importantFile][3] = True
                     return importantFile
@@ -270,7 +293,7 @@ def actionArtifact():
             else:
                 if importantFile.upper() in noExistFiles:
                     noExistFiles.remove(importantFile.upper())
-                    writeBlackList()
+                    writeBlackListFile()
                     FileDatabase[importantFile][1] = 1
                     FileDatabase[importantFile][3] = True
                     return importantFile
@@ -286,29 +309,29 @@ def actionArtifact():
         if len(KeyDatabase[importantKey][1]) == 0:
             if KeyDatabase[importantKey][2][0] == 1:
                 print("Deleting: "+importantKey+"...")
-                #noExistKeys.append(importantKey.upper())
-                #writeBlackList() !!!
+                noExistKeys.append(importantKey.upper()+";")
+                writeBlackListKey()
                 KeyDatabase[importantKey][2][0] = 0
             else:
                 print("Creating: "+importantKey+"...")
-                #if importantKey.upper() in noExistKey:
-                    #noExistKey.remove(importantKey.upper())
-                    #writeBlackList()
+                if importantKey.upper()+";" in noExistKeys:
+                    noExistKeys.remove(importantKey.upper()+";")
+                    writeBlackListKey()
                 
-                    #KeyDatabase[importantKey][2][0] = 1
-                    #KeyDatabase[importantKey][4] = True
-                    #return importantKey
+                    KeyDatabase[importantKey][2][0] = 1
+                    KeyDatabase[importantKey][4][0] = True
+                    return importantKey
 
                 l = importantKey.split("\\")
-               # k = "".join(str(elem)+"\\" for elem in l[1:len(l)]).strip()
-                #if l[0] == "Machine" or l[0] == "MACHINE":
-                 #   CreateKey(HKEY_LOCAL_MACHINE, k)
-                #if l[0] == "Root" or l[0] == "ROOT":
-                 #   CreateKey(HKEY_CLASSES_ROOT, k)
-                #if l[0] == "User" or l[0] == "USER":
-                 #   CreateKey(HKEY_CURRENT_USER, k)
+                k = "".join(str(elem)+"\\" for elem in l[1:len(l)]).strip()
+                if l[0] == "Machine" or l[0] == "MACHINE":
+                    CreateKey(HKEY_LOCAL_MACHINE, k)
+                if l[0] == "Root" or l[0] == "ROOT":
+                    CreateKey(HKEY_CLASSES_ROOT, k)
+                if l[0] == "User" or l[0] == "USER":
+                    CreateKey(HKEY_CURRENT_USER, k)
 
-                #KeyDatabase[importantKey][2][0] = 1
+                KeyDatabase[importantKey][2][0] = 1
                  
             KeyDatabase[importantKey][4][0] = True
             return importantKey, None
@@ -317,14 +340,21 @@ def actionArtifact():
             pos = (KeyDatabase[importantKey][1]).index(importantValue) + 1
             if KeyDatabase[importantKey][2][pos] == 1:
                 print("Deleting: "+importantKey+"  "+importantValue+"...")
-                #noExistKeys.append(importantKey.upper())
-                #writeBlackList() !!!
+                noExistKeys.append("A;"+importantValue.upper())
+                writeBlackListKey()
                 KeyDatabase[importantKey][2][pos] = 0
             else:
                 print("Creating: "+importantKey+"  "+importantValue+"...")
-
+                if "A;"+importantValue.upper() in noExistKeys:
+                    noExistKeys.remove("A;"+importantValue.upper())
+                    writeBlackListKey()
+                
+                    KeyDatabase[importantKey][2][pos] = 1
+                    KeyDatabase[importantKey][4][pos] = True
+                    return importantKey, importantValue
+                
                 l = importantKey.split("\\")
-                k = "".join(str(elem)+"\\" for elem in l[1:len(l)]).strip()
+                key = "".join(str(elem)+"\\" for elem in l[1:len(l)]).strip()
                 aReg = None
                 if l[0] == "Machine" or l[0] == "MACHINE":
                     aReg = ConnectRegistry(None, HKEY_LOCAL_MACHINE)
@@ -333,9 +363,19 @@ def actionArtifact():
                 if l[0] == "User" or l[0] == "USER":
                     aReg = ConnectRegistry(None, HKEY_CURRENT_USER)
 
-               # k = OpenKey(aReg, key)
-                #SetValueEx(k, importantValue, 0, REG_SZ, 1)
-                #CloseKey(k)
+                try:
+                    k = OpenKey(aReg, key, 0 ,KEY_SET_VALUE)
+                except:
+                    if l[0] == "Machine" or l[0] == "MACHINE":
+                        CreateKey(HKEY_LOCAL_MACHINE, key)
+                    if l[0] == "Root" or l[0] == "ROOT":
+                        CreateKey(HKEY_CLASSES_ROOT, key)
+                    if l[0] == "User" or l[0] == "USER":
+                        CreateKey(HKEY_CURRENT_USER, key)
+                    k = OpenKey(aReg, key, 0 ,KEY_SET_VALUE)
+
+                SetValueEx(k, importantValue, 0, REG_SZ, "1")
+                CloseKey(k)
                 
                 KeyDatabase[importantKey][2][pos] = 1
 
@@ -346,15 +386,16 @@ def actionArtifact():
 def restoreArtifact(LastTouchedElem, LastTouchedValue):
     if LastTouchedElem in FileDatabase.keys():
         if FileDatabase[LastTouchedElem][1] == 1:
+            print("Deleting: "+LastTouchedElem+"...")
             l = LastTouchedElem.split("\\")
             name = l[len(l)-1]
             path = "".join(str(elem)+"\\\\" for elem in l[0:len(l)-1]).strip()
             if name == "*.*":
                 noExistFiles.append((path+"ag.txt").upper())
-                writeBlackList()
+                writeBlackListFile()
             else:
                 noExistFiles.append(LastTouchedElem.upper())
-                writeBlackList()
+                writeBlackListFile()
             FileDatabase[LastTouchedElem][1] = 0
         else:
             print("Creating: "+LastTouchedElem+"...")
@@ -364,7 +405,7 @@ def restoreArtifact(LastTouchedElem, LastTouchedValue):
             if name == "*.*":
                 if (path+"ag.txt").upper() in noExistFiles:
                     noExistFiles.remove((path+"ag.txt").upper())
-                    writeBlackList()
+                    writeBlackListFile()
                     FileDatabase[LastTouchedElem][1] = 1
                     FileDatabase[LastTouchedElem][3] = True
                     return
@@ -374,7 +415,7 @@ def restoreArtifact(LastTouchedElem, LastTouchedValue):
             else:
                 if LastTouchedElem.upper() in noExistFiles:
                     noExistFiles.remove(LastTouchedElem.upper())
-                    writeBlackList()
+                    writeBlackListFile()
                     FileDatabase[LastTouchedElem][1] = 1
                     FileDatabase[LastTouchedElem][3] = True
                     return
@@ -389,42 +430,52 @@ def restoreArtifact(LastTouchedElem, LastTouchedValue):
         if len(KeyDatabase[LastTouchedElem][1]) == 0:
             if KeyDatabase[LastTouchedElem][2][0] == 1:
                 print("Deleting: "+LastTouchedElem+"...")
-                #noExistKeys.append(importantKey.upper())
-                #writeBlackList() !!!
+                noExistKeys.append(LastTouchedElem.upper()+";")
+                writeBlackListKey()
                 KeyDatabase[LastTouchedElem][2][0] = 0
             else:
                 print("Creating: "+LastTouchedElem+"...")
-                #if importantKey.upper() in noExistKey:
-                    #noExistKey.remove(importantKey.upper())
-                    #writeBlackList()
+                if LastTouchedElem.upper()+";" in noExistKeys:
+                    noExistKeys.remove(LastTouchedElem.upper()+";")
+                    writeBlackListKey()
                 
-                    #KeyDatabase[importantKey][2][0] = 1
-                    #KeyDatabase[importantKey][4] = True
-                    #return importantKey
+                    KeyDatabase[LastTouchedElem][2][0] = 1
+                    KeyDatabase[LastTouchedElem][4][0] = True
+                    return
 
                 l = LastTouchedElem.split("\\")
-                #k = "".join(str(elem)+"\\" for elem in l[1:len(l)]).strip()
-                #if l[0] == "Machine" or l[0] == "MACHINE":
-                 #   CreateKey(HKEY_LOCAL_MACHINE, k)
-                #if l[0] == "Root" or l[0] == "ROOT":
-                 #   CreateKey(HKEY_CLASSES_ROOT, k)
-                #if l[0] == "User" or l[0] == "USER":
-                 #   CreateKey(HKEY_CURRENT_USER, k)
+                k = "".join(str(elem)+"\\" for elem in l[1:len(l)]).strip()
+                if l[0] == "Machine" or l[0] == "MACHINE":
+                    CreateKey(HKEY_LOCAL_MACHINE, k)
+                if l[0] == "Root" or l[0] == "ROOT":
+                    CreateKey(HKEY_CLASSES_ROOT, k)
+                if l[0] == "User" or l[0] == "USER":
+                    CreateKey(HKEY_CURRENT_USER, k)
 
                 KeyDatabase[LastTouchedElem][2][0] = 1
-        
+                 
+            KeyDatabase[LastTouchedElem][4][0] = True
+            return
+
         else:
             pos = (KeyDatabase[LastTouchedElem][1]).index(LastTouchedValue) + 1
             if KeyDatabase[LastTouchedElem][2][pos] == 1:
                 print("Deleting: "+LastTouchedElem+"  "+LastTouchedValue+"...")
-                #noExistKeys.append(importantKey.upper())
-                #writeBlackList() !!!
+                noExistKeys.append("A;"+LastTouchedValue.upper())
+                writeBlackListKey()
                 KeyDatabase[LastTouchedElem][2][pos] = 0
             else:
                 print("Creating: "+LastTouchedElem+"  "+LastTouchedValue+"...")
-
+                if "A;"+LastTouchedValue.upper() in noExistKeys:
+                    noExistKeys.remove("A;"+LastTouchedValue.upper())
+                    writeBlackListKey()
+                
+                    KeyDatabase[LastTouchedElem][2][pos] = 1
+                    KeyDatabase[LastTouchedElem][4][pos] = True
+                    return
+                
                 l = LastTouchedElem.split("\\")
-                k = "".join(str(elem)+"\\" for elem in l[1:len(l)]).strip()
+                key = "".join(str(elem)+"\\" for elem in l[1:len(l)]).strip()
                 aReg = None
                 if l[0] == "Machine" or l[0] == "MACHINE":
                     aReg = ConnectRegistry(None, HKEY_LOCAL_MACHINE)
@@ -433,9 +484,20 @@ def restoreArtifact(LastTouchedElem, LastTouchedValue):
                 if l[0] == "User" or l[0] == "USER":
                     aReg = ConnectRegistry(None, HKEY_CURRENT_USER)
 
-                #k = OpenKey(aReg, key)
-                #SetValueEx(k, LastTouchedValue, 0, REG_SZ, 1)
-                #CloseKey(k)
+                try:
+                    k = OpenKey(aReg, key, 0 ,KEY_SET_VALUE)
+                except:
+                    if l[0] == "Machine" or l[0] == "MACHINE":
+                        CreateKey(HKEY_LOCAL_MACHINE, key)
+                    if l[0] == "Root" or l[0] == "ROOT":
+                        CreateKey(HKEY_CLASSES_ROOT, key)
+                    if l[0] == "User" or l[0] == "USER":
+                        CreateKey(HKEY_CURRENT_USER, key)
+                    k = OpenKey(aReg, key, 0 ,KEY_SET_VALUE)
+
+                SetValueEx(k, LastTouchedValue, 0, REG_SZ, "1")
+                CloseKey(k)
+                
                 KeyDatabase[LastTouchedElem][2][pos] = 1
             KeyDatabase[LastTouchedElem][4][pos] = True
             
@@ -501,7 +563,6 @@ def exitCase():
     return True
 
 
-
 def clearPath(targetFile):
     l = targetFile.split("\\")
     path = ""
@@ -553,7 +614,11 @@ def getBestIteration():
 def inWhiteListFile(file):
     l = file.split("\\")
     name = l[len(l)-1]
-    return name in whitelist
+    return name in whitelistFile
+
+
+def inWhiteListKey(key):
+    return ClearKey(key) in whitelistKey
 
 
 def inDatabaseFile(file):
@@ -578,7 +643,7 @@ def getCommand(line):
 def controlKey(targetKey):
     try:
         l =  targetKey.split("\\")
-        return not inDatabaseKey(targetKey) and len(l) > 4 and l[len(l)-1] != "\\"
+        return not inDatabaseKey(targetKey) and len(l) > 2 and l[len(l)-1] != "\\" and not inWhiteListKey(targetKey)
     except:
         return False
 
@@ -624,8 +689,8 @@ while(True):
                     except:
                         print("Error splitting REGKEY commad "+command)
                         key = ""
-
-                    if controlKey(key):                                                                   #Verify the Key Correctness
+                    
+                    if controlKey(key):                                                                         #Verify the Key Correctness
                         targetKey = ClearKey(key)
                         isPresent = findKey(targetKey,"")                                                       #Verify if the Key is present
                         weight = calculateWeightKey(targetKey, "")                                              #Calculate the Key Weight
@@ -670,11 +735,10 @@ while(True):
             f.close()
         FilesNumber += 1
 
-    
     if len(FileDatabase) == 0 and len(KeyDatabase) == 0:                                                        #Case of no Files and no Keys
         print("No file and Keys queries")
         break
-    
+
     iterationWeight = calculateIterWeight(actualEvasionPath, LinesNumber, FilesNumber, len(threads))            #Calculate the Iteration Weight
     IterationDatabase[iteration] = [FileDatabase.copy(), KeyDatabase.copy(), iterationWeight]                   #Save the actual Iteration
     
@@ -687,13 +751,10 @@ while(True):
         LastTouchedElement, LastTouchedValue = actionArtifact()
     elif IterationDatabase[iteration][2] == IterationDatabase[iteration-1][2]:
         print("EQUAL TO PREVIOUS ITERATION")
-
         restoreArtifact(LastTouchedElement, LastTouchedValue)
         validationElem(LastTouchedElement, LastTouchedValue, 1)
-        
         if iteration > 0 and exitCase():
             break
-        
         LastTouchedElement, LastTouchedValue = actionArtifact()
     else:
         print("WORSE THAN PREVIOUS ITERATION")
@@ -704,22 +765,38 @@ while(True):
         
     iteration += 1
 
-try:    #pritn also keys !!!!!!!!!!!!!!!!!!!!!!!
+try:
     f = open("report.txt","w")
     f.close()
     f = open("report.txt","a")
     f.write("ArtifactGenerator\n")
     print("")
+    print("")
     f.write("\n")
+    print("FILES")
+    f.write("FILES\n")
     for i in IterationDatabase[iteration][0].keys():
         print (i+": "+IterationDatabase[iteration][0][i][2])
         f.write(i+": "+IterationDatabase[iteration][0][i][2]+"\n")
     print("")
     f.write("\n")
+    print("KEYS")
+    f.write("KEYS\n")
+    for j in IterationDatabase[iteration][1].keys():
+        if len(IterationDatabase[iteration][1][j][1]) == 0:
+            print (j+": "+IterationDatabase[iteration][1][j][3][0])
+            f.write((j+": "+IterationDatabase[iteration][1][j][3][0]))
+        else:
+            for value in range(len(IterationDatabase[iteration][1][j][1])):
+                print (j+" Value = "+ IterationDatabase[iteration][1][j][1][value]+": "+IterationDatabase[iteration][1][j][3][value+1])
+                f.write((j+" Value = "+ IterationDatabase[iteration][1][j][1][value]+": "+IterationDatabase[iteration][1][j][3][value+1]))
+    f.write("\n")
     print("The complete report is in: "+BluePill_evasion_path + str(getBestIteration()) + "/")
     f.write("The complete report is in: "+BluePill_evasion_path + str(getBestIteration()) + "/")
     f.close()
     noExistFiles.clear()
-    writeBlackList()
+    writeBlackListFile()
+    noExistKeys.clear()
+    writeBlackListKey()
 except:
-    None
+    print("Error in during Report Writing")
