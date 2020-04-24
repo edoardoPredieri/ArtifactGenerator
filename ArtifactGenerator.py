@@ -92,11 +92,23 @@ GeneralCommandList = {"IsDebuggerPresent" : 5, "CheckRemoteDebuggerPresent" : 5,
                       "NtOpenKey" : 2, "NtEnumerateKey" :2 , "NtQueryValueKey":2 , "NtQueryAttributesFile" :2}
 
 #List of Files to not modificate
-whitelistFile = ["SVCHOST.EXE", "ACLAYERS.DLL", "CMD.EXE", "SORTDEFAULT.NLS", "DESKTOP.INI", "EE.EXE", "EDO", "APPDATA", "USERS", "MOUNTPOINTMANAGER", "EN", "STATICCACHE.DAT", "OLEACCRC.DLL"]
+whitelistFile = ["SVCHOST.EXE", "ACLAYERS.DLL", "CMD.EXE", "SORTDEFAULT.NLS", "DESKTOP.INI", "EE.EXE", "EDO", "APPDATA", "USERS", "MOUNTPOINTMANAGER", "EN", "STATICCACHE.DAT", "OLEACCRC.DLL", "ACXTRNAL.DLL"]
 #List of Keys to not modificate
 whitelistKey = ["MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Session Manager", "Machine\\SYSTEM\\CurrentControlSet\\Control\\Session Manager", "\\REGISTRY\\MACHINE", "Machine\\SOFTWARE\\Policies\\Microsoft\\Windows\\Safer\\CodeIdentifiers",
                 "Machine\\SYSTEM\\CurrentControlSet\\Control\\Nls\\Sorting\\Versions", "MACHINE\SYSTEM\CurrentControlSet\Control\SafeBoot\Option", "\Registry\Machine\System\CurrentControlSet\Control\Srp\GP\DLL", "Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Diagnostics",
-                "Machine\SYSTEM\CurrentControlSet\Control\Srp\GP\DLL", "USER\S-1-5-21-3859524018-1065375656-672923527-1001\Software\Policies\Microsoft\Windows\Safer\CodeIdentifiers"]
+                "Machine\SYSTEM\CurrentControlSet\Control\Srp\GP\DLL", "USER\S-1-5-21-3859524018-1065375656-672923527-1001\Software\Policies\Microsoft\Windows\Safer\CodeIdentifiers", "Machine\SYSTEM\CurrentControlSet\Control\Terminal Server",
+                "Machine\\SYSTEM\\CurrentControlSet\\Control\\Error Message Instrument\\", "Machine\\SOFTWARE\\Microsoft\\OLEAUT", "Machine\\SOFTWARE\\Microsoft\\OLE\\Tracing", "Machine\\SOFTWARE\\Microsoft\\OLE", "Machine\\CONTROL PANEL\\Desktop\\MuiCached\MachineLanguageConfiguration",
+                "Machine\\CONTROL PANEL\\Desktop\\LanguageConfiguration", "Machine\\CONTROL PANEL\\Desktop\\MuiCached", "Machine\\SYSTEM\\CurrentControlSet\\Services\\EventLog\\Application\\Error Instrument\\", "Machine\\SYSTEM\\CurrentControlSet\\Services\\EventLog\\Application\\Error Instrument",
+                "Machine\\SOFTWARE\\Microsoft\\Windows\\Windows Error Reporting\\WMR", "Machine\\SOFTWARE\\Microsoft\\Windows", "MACHINE\\SOFTWARE\\Policies\\Microsoft\\Windows\\AppCompat", "MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\SideBySide",
+                "USER\\S-1-5-21-3859524018-1065375656-672923527-1001", "Machine\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders", "Machine\\SOFTWARE\\Policies\\Microsoft\\Windows\\System", "Machine\\HTTP\\shell\\open\\command",
+                "Machine\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\Run", "USER\\S-1-5-21-3859524018-1065375656-672923527-1001_CLASSES", "Machine\\SOFTWARE\\Classes\\http\\shell\\open\\command", "MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\AppCertDlls",
+                "MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\AppCompatibility", "USER\\S-1-5-21-3859524018-1065375656-672923527-1001\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders", "USER\\S-1-5-21-3859524018-1065375656-672923527-1001\\Software\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Layers",
+                "Machine\\SOFTWARE\\Policies\\Microsoft\\MUI\\Settings", "Machine\\SOFTWARE\\Policies\\Microsoft\\Control Panel\\Desktop", "USER\\S-1-5-21-3859524018-1065375656-672923527-1001\\Software\\Microsoft\\Windows NT\\CurrentVersion"]
+
+whitelistValue = [["Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows", "RunDiagnosticLoggingApplicationManagement"], ["Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\GRE_Initialize", "DisableMetaFiles"], ["Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options", "EnableDefaultReply"],
+                  ["Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows", "NotifySettingChanges"], ["Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows", "ExecutablesToTrace"], ["Machine\MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers", "C:\Pin311\ee.exe"],
+                  ["Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows", "ShutdownTimeout"], ["MACHINE\SYSTEM\CurrentControlSet\Control\Session Manager\AppCompatibility", "DisableAppCompat"], ["Machine\SOFTWARE\Policies\Microsoft\MUI\Settings", "PreferredUILanguages"]
+                  ]
 
 noExistFiles = []           #List of Files to be "delete" through BluePill
 noExistKeys = []            #List of Keys to be "delete" through BluePill
@@ -267,7 +279,7 @@ def actionArtifact():
              print("Deleting: "+importantFile+"...")
              l = importantFile.split("\\")
              name = l[len(l)-1]
-             path = "".join(str(elem)+"\\\\" for elem in l[0:len(l)-1]).strip()
+             path = "".join(str(elem)+"\\\\" for elem in l[0:len(l)-1])
              if name == "*.*":
                  noExistFiles.append((path+"ag.txt").upper())
                  writeBlackListFile()
@@ -279,7 +291,7 @@ def actionArtifact():
             print("Creating: "+importantFile+"...")
             l = importantFile.split("\\")
             name = l[len(l)-1]
-            path = "".join(str(elem)+"\\\\" for elem in l[0:len(l)-1]).strip()
+            path = "".join(str(elem)+"\\\\" for elem in l[0:len(l)-1])
             if name == "*.*":
                 if (path+"ag.txt").upper() in noExistFiles:
                     noExistFiles.remove((path+"ag.txt").upper())
@@ -323,7 +335,7 @@ def actionArtifact():
                     return importantKey
 
                 l = importantKey.split("\\")
-                k = "".join(str(elem)+"\\" for elem in l[1:len(l)]).strip()
+                k = "".join(str(elem)+"\\" for elem in l[1:len(l)])
                 if l[0] == "Machine" or l[0] == "MACHINE":
                     CreateKey(HKEY_LOCAL_MACHINE, k)
                 if l[0] == "Root" or l[0] == "ROOT":
@@ -354,7 +366,7 @@ def actionArtifact():
                     return importantKey, importantValue
                 
                 l = importantKey.split("\\")
-                key = "".join(str(elem)+"\\" for elem in l[1:len(l)]).strip()
+                key = "".join(str(elem)+"\\" for elem in l[1:len(l)])
                 aReg = None
                 if l[0] == "Machine" or l[0] == "MACHINE":
                     aReg = ConnectRegistry(None, HKEY_LOCAL_MACHINE)
@@ -389,7 +401,7 @@ def restoreArtifact(LastTouchedElem, LastTouchedValue):
             print("Deleting: "+LastTouchedElem+"...")
             l = LastTouchedElem.split("\\")
             name = l[len(l)-1]
-            path = "".join(str(elem)+"\\\\" for elem in l[0:len(l)-1]).strip()
+            path = "".join(str(elem)+"\\\\" for elem in l[0:len(l)-1])
             if name == "*.*":
                 noExistFiles.append((path+"ag.txt").upper())
                 writeBlackListFile()
@@ -401,7 +413,7 @@ def restoreArtifact(LastTouchedElem, LastTouchedValue):
             print("Creating: "+LastTouchedElem+"...")
             l = LastTouchedElem.split("\\")
             name = l[len(l)-1]
-            path = "".join(str(elem)+"\\\\" for elem in l[0:len(l)-1]).strip()
+            path = "".join(str(elem)+"\\\\" for elem in l[0:len(l)-1])
             if name == "*.*":
                 if (path+"ag.txt").upper() in noExistFiles:
                     noExistFiles.remove((path+"ag.txt").upper())
@@ -444,7 +456,7 @@ def restoreArtifact(LastTouchedElem, LastTouchedValue):
                     return
 
                 l = LastTouchedElem.split("\\")
-                k = "".join(str(elem)+"\\" for elem in l[1:len(l)]).strip()
+                k = "".join(str(elem)+"\\" for elem in l[1:len(l)])
                 if l[0] == "Machine" or l[0] == "MACHINE":
                     CreateKey(HKEY_LOCAL_MACHINE, k)
                 if l[0] == "Root" or l[0] == "ROOT":
@@ -475,7 +487,7 @@ def restoreArtifact(LastTouchedElem, LastTouchedValue):
                     return
                 
                 l = LastTouchedElem.split("\\")
-                key = "".join(str(elem)+"\\" for elem in l[1:len(l)]).strip()
+                key = "".join(str(elem)+"\\" for elem in l[1:len(l)])
                 aReg = None
                 if l[0] == "Machine" or l[0] == "MACHINE":
                     aReg = ConnectRegistry(None, HKEY_LOCAL_MACHINE)
@@ -604,11 +616,12 @@ def ClearKey(targetKey):
 def getBestIteration():
     maxx = 0
     best = 0
+    zeroValue =  float(IterationDatabase[0][2])
     for i in IterationDatabase.keys():
         if IterationDatabase[i][2] > maxx:
             maxx = IterationDatabase[i][2]
             best = i
-    return best
+    return best, 100 - ((zeroValue*100)/maxx)
 
 
 def inWhiteListFile(file):
@@ -620,6 +633,12 @@ def inWhiteListFile(file):
 def inWhiteListKey(key):
     return ClearKey(key) in whitelistKey
 
+
+def inWhiteListValue(key, value):
+    for elem in whitelistValue:
+        if (ClearKey(key) == elem[0] or key == elem[0]) and value == elem[1]:
+            return True
+    return False 
 
 def inDatabaseFile(file):
     if file not in FileDatabase.keys():        
@@ -656,7 +675,7 @@ def controlFile(targetFile):
 iteration = 0                                                                                                   #Number of AG Iteration
 LastTouchedElement = ""                                                                                         #Last modified Element
 LastTouchedValue = ""                                                                                           #Last modified Key Value
-                                                                                        
+                                                                            
 print("ArtifactGenerator")
 print("")
 while(True):
@@ -669,12 +688,16 @@ while(True):
 
     keyFlag = False                                                                                             #Flag used to save the key values
     targetKey = ""
+
+    PreviousLine = ""
     
     for file in os.listdir(actualEvasionPath):                                                                  #Read all files in the folder
         if "evasion" in file:
             f = open (actualEvasionPath + file,"r")
             line = f.readline()
+
             while line != "":
+                
                 thread = line.split(":")[0]
                 if thread not in threads :
                     threads.append(thread)
@@ -695,7 +718,9 @@ while(True):
                         isPresent = findKey(targetKey,"")                                                       #Verify if the Key is present
                         weight = calculateWeightKey(targetKey, "")                                              #Calculate the Key Weight
                         KeyDatabase[targetKey] = [weight, [], [isPresent], [""], [False]]                       #Add key to Database
-                        keyFlag = True                
+                        keyFlag = True
+                    else:
+                        keyFlag = False
                 
                 #--------FILE Case-------------------------------------------------------------------------------------------------------------------------------                                                                 
                 elif command in FileCommandList.keys():
@@ -718,13 +743,15 @@ while(True):
                 #---------NTQUERYVALUEKEY Case---------------------------------------------------------------------------------------------------------------------
                 if command == "NtQueryValueKey" and keyFlag:
                     valueKey = line.split("--")[1].strip()                                                      #Get the Query Value
-                    KeyDatabase[targetKey][1].append(valueKey)                                                  #Update the Key Database
-                    isPresent = findKey(targetKey, valueKey)                                                    #Verify if the Value is present
-                    KeyDatabase[targetKey][2].append(isPresent)                                                 #Update the Key Database
-                    KeyDatabase[targetKey][3].append("")
-                    weight = calculateWeightKey(targetKey, valueKey)                                            #Calculate the Key Weight
-                    KeyDatabase[targetKey][0] = weight                                                          #Update the Key Database
-                    KeyDatabase[targetKey][4].append(False)
+                    if not inWhiteListValue(targetKey, valueKey):
+                        KeyDatabase[targetKey][1].append(valueKey)                                              #Update the Key Database
+                        isPresent = findKey(targetKey, valueKey)                                                #Verify if the Value is present
+                        KeyDatabase[targetKey][2].append(isPresent)                                             #Update the Key Database
+                        KeyDatabase[targetKey][3].append("")
+                        weight = calculateWeightKey(targetKey, valueKey)                                        #Calculate the Key Weight
+                        KeyDatabase[targetKey][0] = weight                                                      #Update the Key Database
+                        KeyDatabase[targetKey][4].append(False)
+            
 
                 elif command != "NtOpenKey":
                     keyFlag = False
@@ -732,6 +759,9 @@ while(True):
                 
                 LinesNumber += 1    
                 line = f.readline()
+                if line == PreviousLine:
+                    line = f.readline()
+                PreviousLine = line
             f.close()
         FilesNumber += 1
 
@@ -751,6 +781,7 @@ while(True):
         LastTouchedElement, LastTouchedValue = actionArtifact()
     elif IterationDatabase[iteration][2] == IterationDatabase[iteration-1][2]:
         print("EQUAL TO PREVIOUS ITERATION")
+        p = LastTouchedElement
         restoreArtifact(LastTouchedElement, LastTouchedValue)
         validationElem(LastTouchedElement, LastTouchedValue, 1)
         if iteration > 0 and exitCase():
@@ -791,8 +822,11 @@ try:
                 print (j+" Value = "+ IterationDatabase[iteration][1][j][1][value]+": "+IterationDatabase[iteration][1][j][3][value+1])
                 f.write((j+" Value = "+ IterationDatabase[iteration][1][j][1][value]+": "+IterationDatabase[iteration][1][j][3][value+1]))
     f.write("\n")
-    print("The complete report is in: "+BluePill_evasion_path + str(getBestIteration()) + "/")
-    f.write("The complete report is in: "+BluePill_evasion_path + str(getBestIteration()) + "/")
+    print("")
+    f.write("\n")
+    bestIt, perc = getBestIteration()
+    print("The complete report is in: "+BluePill_evasion_path + str(bestIt) + "/  with an increment of: "+str(perc)+"%")
+    f.write("The complete report is in: "+BluePill_evasion_path + str(bestIt) + "/  with an increment of: "+str(perc)+"%")
     f.close()
     noExistFiles.clear()
     writeBlackListFile()
