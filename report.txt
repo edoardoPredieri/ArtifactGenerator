@@ -1,0 +1,12 @@
+ArtifactGenerator
+
+FILES
+C:\Users\Edo\Desktop\p.txt: No modification
+C:\Program Files\Common Files\VMware\a.txt: To be Deleted
+C:\Users\Edo\Desktop\Clear_Check.txt: To be Created
+C:\Users\Edo\Desktop\pp.exe: No modification
+
+KEYS
+Machine\HARDWARE\ACPI\FADT\VBOX__: To be DeletedMachine\SOFTWARE\Oracle\VirtualBox Guest Additions: To be CreatedMachine\SOFTWARE\Oracle\Prova Key: To be CreatedMachine\SYSTEM\CurrentControlSet\Control\ComputerName: No modificationMachine\SYSTEM\Setup: No modification
+
+The complete report is in: C:/Pin311/Iterations/6/  with an increment of: 58.02469135802469%

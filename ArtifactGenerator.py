@@ -92,7 +92,9 @@ GeneralCommandList = {"IsDebuggerPresent" : 5, "CheckRemoteDebuggerPresent" : 5,
                       "NtOpenKey" : 2, "NtEnumerateKey" :2 , "NtQueryValueKey":2 , "NtQueryAttributesFile" :2}
 
 #List of Files to not modificate
-whitelistFile = ["SVCHOST.EXE", "ACLAYERS.DLL", "CMD.EXE", "SORTDEFAULT.NLS", "DESKTOP.INI", "EE.EXE", "EDO", "APPDATA", "USERS", "MOUNTPOINTMANAGER", "EN", "STATICCACHE.DAT", "OLEACCRC.DLL", "ACXTRNAL.DLL"]
+whitelistFile = ["SVCHOST.EXE", "ACLAYERS.DLL", "CMD.EXE", "SORTDEFAULT.NLS", "DESKTOP.INI", "EE.EXE", "EDO", "APPDATA", "USERS", "MOUNTPOINTMANAGER", "EN", "STATICCACHE.DAT", "OLEACCRC.DLL", "ACXTRNAL.DLL", "MSVFW32.DLL.MUI", "AVICAP32.DLL.MUI",
+                 "KERNELBASE.DLL.MUI", "MSCTF.DLL.MUI"]
+
 #List of Keys to not modificate
 whitelistKey = ["MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Session Manager", "Machine\\SYSTEM\\CurrentControlSet\\Control\\Session Manager", "\\REGISTRY\\MACHINE", "Machine\\SOFTWARE\\Policies\\Microsoft\\Windows\\Safer\\CodeIdentifiers",
                 "Machine\\SYSTEM\\CurrentControlSet\\Control\\Nls\\Sorting\\Versions", "MACHINE\SYSTEM\CurrentControlSet\Control\SafeBoot\Option", "\Registry\Machine\System\CurrentControlSet\Control\Srp\GP\DLL", "Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Diagnostics",
@@ -103,12 +105,16 @@ whitelistKey = ["MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Session Manager", 
                 "USER\\S-1-5-21-3859524018-1065375656-672923527-1001", "Machine\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders", "Machine\\SOFTWARE\\Policies\\Microsoft\\Windows\\System", "Machine\\HTTP\\shell\\open\\command",
                 "Machine\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\Run", "USER\\S-1-5-21-3859524018-1065375656-672923527-1001_CLASSES", "Machine\\SOFTWARE\\Classes\\http\\shell\\open\\command", "MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\AppCertDlls",
                 "MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\AppCompatibility", "USER\\S-1-5-21-3859524018-1065375656-672923527-1001\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders", "USER\\S-1-5-21-3859524018-1065375656-672923527-1001\\Software\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Layers",
-                "Machine\\SOFTWARE\\Policies\\Microsoft\\MUI\\Settings", "Machine\\SOFTWARE\\Policies\\Microsoft\\Control Panel\\Desktop", "USER\\S-1-5-21-3859524018-1065375656-672923527-1001\\Software\\Microsoft\\Windows NT\\CurrentVersion"]
+                "Machine\\SOFTWARE\\Policies\\Microsoft\\MUI\\Settings", "Machine\\SOFTWARE\\Policies\\Microsoft\\Control Panel\\Desktop", "USER\\S-1-5-21-3859524018-1065375656-672923527-1001\\Software\\Microsoft\\Windows NT\\CurrentVersion", "Machine\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\LanguagePack\\DataStore_V1.0",
+                "Machine\\SYSTEM\\CurrentControlSet\\Services\\WinSock2\\Parameters", "Machine\\SYSTEM\\CurrentControlSet\\control\\NetworkProvider\\HwOrder", "Machine\\SYSTEM\\CurrentControlSet\\Services\\Winsock2\\Parameters", "Machine\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Custom\\uninstal.bat",
+                "Machine\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Layers", "Machine\\SYSTEM\\CurrentControlSet\\Control\\SQMServiceList", "Machine\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\WinOldApp",
+                "Machine\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\WOW\\boot", "Machine\\SOFTWARE\\Microsoft\\SQMClient\\Windows", "Machine\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags", "Machine\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\GRE_Initialize",
+                "Machine\\SYSTEM\\CurrentControlSet\\Control\\Nls\\CustomLocale"]
 
 whitelistValue = [["Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows", "RunDiagnosticLoggingApplicationManagement"], ["Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\GRE_Initialize", "DisableMetaFiles"], ["Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options", "EnableDefaultReply"],
                   ["Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows", "NotifySettingChanges"], ["Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows", "ExecutablesToTrace"], ["Machine\MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers", "C:\Pin311\ee.exe"],
-                  ["Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows", "ShutdownTimeout"], ["MACHINE\SYSTEM\CurrentControlSet\Control\Session Manager\AppCompatibility", "DisableAppCompat"], ["Machine\SOFTWARE\Policies\Microsoft\MUI\Settings", "PreferredUILanguages"]
-                  ]
+                  ["Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows", "ShutdownTimeout"], ["MACHINE\SYSTEM\CurrentControlSet\Control\Session Manager\AppCompatibility", "DisableAppCompat"], ["Machine\SOFTWARE\Policies\Microsoft\MUI\Settings", "PreferredUILanguages"],
+                  ["Machine\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer\Run", "Policies"], ["Machine\SOFTWARE\Microsoft\Cryptography\Defaults\Provider\Microsoft Strong Cryptographic Provider", "Image Path"]]
 
 noExistFiles = []           #List of Files to be "delete" through BluePill
 noExistKeys = []            #List of Keys to be "delete" through BluePill
@@ -302,6 +308,16 @@ def actionArtifact():
                 f = open (path+"ag.txt", "w")
                 f.write("Created by Artifact Generator")
                 f.close()
+            elif "*" in name:
+                if (path+"ag"+name[1:len(name)]).upper() in noExistFiles:
+                    noExistFiles.remove((path+"ag"+name[1:len(name)]).upper())
+                    writeBlackListFile()
+                    FileDatabase[importantFile][1] = 1
+                    FileDatabase[importantFile][3] = True
+                    return importantFile
+                f = open (path+"ag"+name[1:len(name)], "w")
+                f.write("Created by Artifact Generator")
+                f.close()
             else:
                 if importantFile.upper() in noExistFiles:
                     noExistFiles.remove(importantFile.upper())
@@ -422,6 +438,16 @@ def restoreArtifact(LastTouchedElem, LastTouchedValue):
                     FileDatabase[LastTouchedElem][3] = True
                     return
                 f = open (path+"ag.txt", "w")
+                f.write("Created by Artifact Generator")
+                f.close()
+            elif "*" in name:
+                if (path+"ag"+name[1:len(name)]).upper() in noExistFiles:
+                    noExistFiles.remove((path+"ag"+name[1:len(name)]).upper())
+                    writeBlackListFile()
+                    FileDatabase[importantFile][1] = 1
+                    FileDatabase[importantFile][3] = True
+                    return importantFile
+                f = open (path+"ag"+name[1:len(name)], "w")
                 f.write("Created by Artifact Generator")
                 f.close()
             else:
@@ -615,13 +641,14 @@ def ClearKey(targetKey):
 
 def getBestIteration():
     maxx = 0
+    minn = IterationDatabase[0][2]
     best = 0
-    zeroValue =  float(IterationDatabase[0][2])
     for i in IterationDatabase.keys():
-        if IterationDatabase[i][2] > maxx:
-            maxx = IterationDatabase[i][2]
+        val = calculateIterWeight(IterationDatabase[i][3], IterationDatabase[i][4], IterationDatabase[i][5], IterationDatabase[i][6])
+        if val > maxx:
+            maxx = val
             best = i
-    return best, 100 - ((zeroValue*100)/maxx)
+    return best, 100 - ((minn*100)/maxx)
 
 
 def inWhiteListFile(file):
@@ -666,9 +693,28 @@ def controlKey(targetKey):
     except:
         return False
 
+def controlKey2(targetKey):
+    try:
+        l =  targetKey.split("\\")
+        return inDatabaseKey(targetKey) and len(l) > 2 and l[len(l)-1] != "\\" and not inWhiteListKey(targetKey)
+    except:
+        return False
+    
+
 def controlFile(targetFile):
     return not inDatabaseFile(targetFile) and len(targetFile) > 3 and "C:" in targetFile and not inWhiteListFile(targetFile.upper()) and targetFile[len(targetFile)-1] != "\\"
 
+
+def controlValue(targetKey, targetValue):
+    try:
+        l =  targetKey.split("\\")
+        return targetKey in KeyDatabase.keys() and len(l) > 2 and l[len(l)-1] != "\\"  and targetValue not in  KeyDatabase[targetKey][1] and not inWhiteListValue(targetKey, valueKey) 
+    except:
+        return False
+    
+        
+    
+    
 
 
 
@@ -678,8 +724,15 @@ LastTouchedValue = ""                                                           
                                                                             
 print("ArtifactGenerator")
 print("")
+os.system("cd C:/Pin311 & echo F | xcopy ee.exe eeC.exe /y")
 while(True):
     os.system("cd C:/Pin311 & pin -follow_execv -t bluepill32 -evasions -iter "+str(iteration)+" -- ee.exe")    #BluePill Execution Command
+   
+    if not findFile("C:\\Pin311\\ee.exe"):
+        print("Auto-Eliminate Malware   iteration = "+str(iteration))
+        os.system("cd C:/Pin311 & rename eeC.exe ee.exe")
+        iteration -= 1
+
     actualEvasionPath = BluePill_evasion_path + str(iteration) + "/"                                            #Path of current evasion.log
 
     FilesNumber = 0                                                                                             #Number if files in folder (Different Processes)
@@ -694,7 +747,9 @@ while(True):
     for file in os.listdir(actualEvasionPath):                                                                  #Read all files in the folder
         if "evasion" in file:
             f = open (actualEvasionPath + file,"r")
+            
             line = f.readline()
+           
 
             while line != "":
                 
@@ -718,12 +773,15 @@ while(True):
                         isPresent = findKey(targetKey,"")                                                       #Verify if the Key is present
                         weight = calculateWeightKey(targetKey, "")                                              #Calculate the Key Weight
                         KeyDatabase[targetKey] = [weight, [], [isPresent], [""], [False]]                       #Add key to Database
-                        keyFlag = True
+                    elif controlKey2(key):
+                        targetKey = ClearKey(key)
                     else:
-                        keyFlag = False
+                        targetKey = ""
+
                 
                 #--------FILE Case-------------------------------------------------------------------------------------------------------------------------------                                                                 
                 elif command in FileCommandList.keys():
+                    targetKey = ""
                     try:
                         mode = line.split("[")[1].split("]")[1].split("--")[1].strip()                          #Get the open modality (Read, Open, ...)
                         targetFile = line.split("[")[1].split("]")[1].split("--")[2].strip()                    #Get the File path
@@ -741,9 +799,9 @@ while(True):
                             print("Error file: "+targetFile)
                             
                 #---------NTQUERYVALUEKEY Case---------------------------------------------------------------------------------------------------------------------
-                if command == "NtQueryValueKey" and keyFlag:
+                if command == "NtQueryValueKey":
                     valueKey = line.split("--")[1].strip()                                                      #Get the Query Value
-                    if not inWhiteListValue(targetKey, valueKey):
+                    if targetKey != "" and controlValue(targetKey, valueKey):
                         KeyDatabase[targetKey][1].append(valueKey)                                              #Update the Key Database
                         isPresent = findKey(targetKey, valueKey)                                                #Verify if the Value is present
                         KeyDatabase[targetKey][2].append(isPresent)                                             #Update the Key Database
@@ -751,14 +809,13 @@ while(True):
                         weight = calculateWeightKey(targetKey, valueKey)                                        #Calculate the Key Weight
                         KeyDatabase[targetKey][0] = weight                                                      #Update the Key Database
                         KeyDatabase[targetKey][4].append(False)
-            
 
-                elif command != "NtOpenKey":
-                    keyFlag = False
-                
-                
-                LinesNumber += 1    
-                line = f.readline()
+                LinesNumber += 1
+                try:
+                    line = f.readline()
+                except:
+                    print("Error reading line")
+                    line = f.readline()
                 if line == PreviousLine:
                     line = f.readline()
                 PreviousLine = line
@@ -770,7 +827,7 @@ while(True):
         break
 
     iterationWeight = calculateIterWeight(actualEvasionPath, LinesNumber, FilesNumber, len(threads))            #Calculate the Iteration Weight
-    IterationDatabase[iteration] = [FileDatabase.copy(), KeyDatabase.copy(), iterationWeight]                   #Save the actual Iteration
+    IterationDatabase[iteration] = [FileDatabase.copy(), KeyDatabase.copy(), iterationWeight, actualEvasionPath, LinesNumber, FilesNumber, len(threads)]                   #Save the actual Iteration
     
     if iteration == 0 or IterationDatabase[iteration][2] > IterationDatabase[iteration-1][2]:
         print("BETTER THAN PREVIOUS ITERATION")

@@ -1,0 +1,27 @@
+
+-----------------------------BETTER-----------------------------------------
+
+KEY
+	Machine\SOFTWARE\Microsoft\Windows\CurrentVersion  ProductId
+	Machine\SYSTEM\CurrentControlSet\Services\crypt32  DebugHeapFlags
+	Machine\SOFTWARE\Microsoft\Rpc  MaxRpcSize
+	Machine\SOFTWARE\Policies\Microsoft\Windows NT\Rpc
+
+
+
+
+FILES
+	C:\Windows\system32\spynet\server.exe
+	
+
+
+
+
+
+
+
+-----------------------------WORSE------------------------------------------
+
+KEY
+	Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options  DisableLocalOverride
+	
