@@ -6,6 +6,8 @@ KEY
 	Machine\SYSTEM\CurrentControlSet\Services\crypt32  DebugHeapFlags
 	Machine\SOFTWARE\Microsoft\Rpc  MaxRpcSize
 	Machine\SOFTWARE\Policies\Microsoft\Windows NT\Rpc
+	Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\VFW
+	Machine\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders  AppData
 
 
 

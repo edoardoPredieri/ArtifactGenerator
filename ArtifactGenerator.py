@@ -93,7 +93,7 @@ GeneralCommandList = {"IsDebuggerPresent" : 5, "CheckRemoteDebuggerPresent" : 5,
 
 #List of Files to not modificate
 whitelistFile = ["SVCHOST.EXE", "ACLAYERS.DLL", "CMD.EXE", "SORTDEFAULT.NLS", "DESKTOP.INI", "EE.EXE", "EDO", "APPDATA", "USERS", "MOUNTPOINTMANAGER", "EN", "STATICCACHE.DAT", "OLEACCRC.DLL", "ACXTRNAL.DLL", "MSVFW32.DLL.MUI", "AVICAP32.DLL.MUI",
-                 "KERNELBASE.DLL.MUI", "MSCTF.DLL.MUI"]
+                 "KERNELBASE.DLL.MUI", "MSCTF.DLL.MUI", "WERFAULT.EXE.MUI", "FAULTREP.DLL.MUI", "DWM.EXE", "EXPLORER.EXE", "WMIPRVSE.EXE", "PIN.EXE"]
 
 #List of Keys to not modificate
 whitelistKey = ["MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Session Manager", "Machine\\SYSTEM\\CurrentControlSet\\Control\\Session Manager", "\\REGISTRY\\MACHINE", "Machine\\SOFTWARE\\Policies\\Microsoft\\Windows\\Safer\\CodeIdentifiers",
@@ -109,12 +109,15 @@ whitelistKey = ["MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Session Manager", 
                 "Machine\\SYSTEM\\CurrentControlSet\\Services\\WinSock2\\Parameters", "Machine\\SYSTEM\\CurrentControlSet\\control\\NetworkProvider\\HwOrder", "Machine\\SYSTEM\\CurrentControlSet\\Services\\Winsock2\\Parameters", "Machine\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Custom\\uninstal.bat",
                 "Machine\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Layers", "Machine\\SYSTEM\\CurrentControlSet\\Control\\SQMServiceList", "Machine\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\WinOldApp",
                 "Machine\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\WOW\\boot", "Machine\\SOFTWARE\\Microsoft\\SQMClient\\Windows", "Machine\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags", "Machine\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\GRE_Initialize",
-                "Machine\\SYSTEM\\CurrentControlSet\\Control\\Nls\\CustomLocale"]
+                "Machine\\SYSTEM\\CurrentControlSet\\Control\\Nls\\CustomLocale", "Machine\\SOFTWARE\\Microsoft\\CTF\\KnownClasses", "Machine\\SOFTWARE\\Microsoft\\CTF\\DirectSwitchHotkeys", "Machine\\SOFTWARE\\Policies\\Microsoft\\SQMClient\\Windows", "Machine\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer",
+                "Machine\\SYSTEM\\CurrentControlSet\\Control\\ComputerName\\ActiveComputerName"]
 
 whitelistValue = [["Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows", "RunDiagnosticLoggingApplicationManagement"], ["Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\GRE_Initialize", "DisableMetaFiles"], ["Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options", "EnableDefaultReply"],
                   ["Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows", "NotifySettingChanges"], ["Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows", "ExecutablesToTrace"], ["Machine\MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers", "C:\Pin311\ee.exe"],
                   ["Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows", "ShutdownTimeout"], ["MACHINE\SYSTEM\CurrentControlSet\Control\Session Manager\AppCompatibility", "DisableAppCompat"], ["Machine\SOFTWARE\Policies\Microsoft\MUI\Settings", "PreferredUILanguages"],
-                  ["Machine\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer\Run", "Policies"], ["Machine\SOFTWARE\Microsoft\Cryptography\Defaults\Provider\Microsoft Strong Cryptographic Provider", "Image Path"]]
+                  ["Machine\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer\Run", "Policies"], ["Machine\SOFTWARE\Microsoft\Cryptography\Defaults\Provider\Microsoft Strong Cryptographic Provider", "Image Path"], ["Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows", "Load"],
+                  ["Machine\SOFTWARE\Microsoft\Windows\CurrentVersion\Setup", "SourcePath"], ["Machine\SOFTWARE\Microsoft\Windows\CurrentVersion", "DevicePath"], ["Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\AeDebug", "Auto"], ["Machine\SOFTWARE\Policies\Microsoft\Windows NT\Rpc", "IgnoreDelegationFailure"],
+                  ["Machine\SOFTWARE\Policies\Microsoft\Windows NT\Rpc", "EnableTcpPortScaling"]]
 
 noExistFiles = []           #List of Files to be "delete" through BluePill
 noExistKeys = []            #List of Keys to be "delete" through BluePill
@@ -185,6 +188,7 @@ def calculateIterWeight(actualEvasionPath, initialLinenumber, initialFilesNumber
     commandsWeight = 0
     threads = []
     linesNumber = 0
+    lastLine = ""
     for file in os.listdir(actualEvasionPath):
         if "evasion" in file:
             f = open (actualEvasionPath + file,"r")
@@ -197,11 +201,12 @@ def calculateIterWeight(actualEvasionPath, initialLinenumber, initialFilesNumber
                     command = line.split("[")[1].split("]")[0]
                 except:
                     command = ""
-                if command in GeneralCommandList.keys():
+                if command in GeneralCommandList.keys() and line != lastLine:
                     commandsWeight += GeneralCommandList[command]
-                if command in FileCommandList.keys():
+                if command in FileCommandList.keys() and line != lastLine:
                     commandsWeight += FileCommandList[command]
-                    
+
+                lastLine = line
                 linesNumber += 1
                 line = f.readline()
             f.close()
@@ -334,7 +339,7 @@ def actionArtifact():
         return importantFile, None
             
     else:
-        if len(KeyDatabase[importantKey][1]) == 0:
+        if len(KeyDatabase[importantKey][1]) == 0 or importantValue == None:
             if KeyDatabase[importantKey][2][0] == 1:
                 print("Deleting: "+importantKey+"...")
                 noExistKeys.append(importantKey.upper()+";")
@@ -349,15 +354,19 @@ def actionArtifact():
                     KeyDatabase[importantKey][2][0] = 1
                     KeyDatabase[importantKey][4][0] = True
                     return importantKey
-
-                l = importantKey.split("\\")
-                k = "".join(str(elem)+"\\" for elem in l[1:len(l)])
-                if l[0] == "Machine" or l[0] == "MACHINE":
-                    CreateKey(HKEY_LOCAL_MACHINE, k)
-                if l[0] == "Root" or l[0] == "ROOT":
-                    CreateKey(HKEY_CLASSES_ROOT, k)
-                if l[0] == "User" or l[0] == "USER":
-                    CreateKey(HKEY_CURRENT_USER, k)
+                try:
+                    l = importantKey.split("\\")
+                    k = "".join(str(elem)+"\\" for elem in l[1:len(l)])
+                    if l[0] == "Machine" or l[0] == "MACHINE":
+                        CreateKey(HKEY_LOCAL_MACHINE, k)
+                    if l[0] == "Root" or l[0] == "ROOT":
+                        CreateKey(HKEY_CLASSES_ROOT, k)
+                    if l[0] == "User" or l[0] == "USER":
+                        CreateKey(HKEY_CURRENT_USER, k)
+                except:
+                    print("Error during creation: "+importantKey)
+                    del KeyDatabase[importantKey]
+                    return importantKey, None
 
                 KeyDatabase[importantKey][2][0] = 1
                  
@@ -464,8 +473,8 @@ def restoreArtifact(LastTouchedElem, LastTouchedValue):
 
         FileDatabase[LastTouchedElem][3] = True
 
-    else:
-        if len(KeyDatabase[LastTouchedElem][1]) == 0:
+    elif LastTouchedElem in KeyDatabase.keys():
+        if len(KeyDatabase[LastTouchedElem][1]) == 0 or LastTouchedValue == None:
             if KeyDatabase[LastTouchedElem][2][0] == 1:
                 print("Deleting: "+LastTouchedElem+"...")
                 noExistKeys.append(LastTouchedElem.upper()+";")
@@ -481,14 +490,19 @@ def restoreArtifact(LastTouchedElem, LastTouchedValue):
                     KeyDatabase[LastTouchedElem][4][0] = True
                     return
 
-                l = LastTouchedElem.split("\\")
-                k = "".join(str(elem)+"\\" for elem in l[1:len(l)])
-                if l[0] == "Machine" or l[0] == "MACHINE":
-                    CreateKey(HKEY_LOCAL_MACHINE, k)
-                if l[0] == "Root" or l[0] == "ROOT":
-                    CreateKey(HKEY_CLASSES_ROOT, k)
-                if l[0] == "User" or l[0] == "USER":
-                    CreateKey(HKEY_CURRENT_USER, k)
+                try:
+                    l = LastTouchedElem.split("\\")
+                    k = "".join(str(elem)+"\\" for elem in l[1:len(l)])
+                    if l[0] == "Machine" or l[0] == "MACHINE":
+                        CreateKey(HKEY_LOCAL_MACHINE, k)
+                    if l[0] == "Root" or l[0] == "ROOT":
+                        CreateKey(HKEY_CLASSES_ROOT, k)
+                    if l[0] == "User" or l[0] == "USER":
+                        CreateKey(HKEY_CURRENT_USER, k)
+                except:
+                    print("Error during creation: "+LastTouchedElem)
+                    del KeyDatabase[LastTouchedElem]
+                    return
 
                 KeyDatabase[LastTouchedElem][2][0] = 1
                  
@@ -541,7 +555,7 @@ def restoreArtifact(LastTouchedElem, LastTouchedValue):
             
 
 
-def validationElem(elem, value, mode):
+def validationElem(elem, value, mode): 
     if elem in FileDatabase.keys():
         if mode == 0:                                       #Better Case
             if FileDatabase[elem][1] == 1:
@@ -555,7 +569,7 @@ def validationElem(elem, value, mode):
                 FileDatabase[elem][2] = "To be Created"
             else:
                 FileDatabase[elem][2] = "To be Deleted"
-    else:
+    elif elem in KeyDatabase.keys():
         if value:
             pos = (KeyDatabase[elem][1]).index(value) + 1
             if mode == 0:                                       #Better Case
@@ -708,7 +722,7 @@ def controlFile(targetFile):
 def controlValue(targetKey, targetValue):
     try:
         l =  targetKey.split("\\")
-        return targetKey in KeyDatabase.keys() and len(l) > 2 and l[len(l)-1] != "\\"  and targetValue not in  KeyDatabase[targetKey][1] and not inWhiteListValue(targetKey, valueKey) 
+        return targetKey in KeyDatabase.keys() and len(l) > 2 and l[len(l)-1] != "\\"  and targetValue not in  KeyDatabase[targetKey][1] and not inWhiteListValue(targetKey, targetValue) and targetValue != None and targetValue != ""
     except:
         return False
     
@@ -739,7 +753,6 @@ while(True):
     LinesNumber = 0                                                                                             #Number of lines (Commands) in the file
     threads = []                                                                                                #Number of different Treads ina file (Process)
 
-    keyFlag = False                                                                                             #Flag used to save the key values
     targetKey = ""
 
     PreviousLine = ""
@@ -749,7 +762,6 @@ while(True):
             f = open (actualEvasionPath + file,"r")
             
             line = f.readline()
-           
 
             while line != "":
                 
@@ -761,7 +773,6 @@ while(True):
                 
                 #-------NTOPENKEY Case--------------------------------------------------------------------------------------------------------------------------
                 if command == "NtOpenKey":                                                                      #REGKEY CASE
-                    l = 1
                     try:
                         key = line.split("--")[2].strip()
                     except:
@@ -833,7 +844,7 @@ while(True):
         print("BETTER THAN PREVIOUS ITERATION")
         if iteration > 0:
             validationElem(LastTouchedElement, LastTouchedValue, 0)
-        if iteration > 0 and exitCase():
+        if iteration > 0 and exitCase() or iteration > 200:
             break
         LastTouchedElement, LastTouchedValue = actionArtifact()
     elif IterationDatabase[iteration][2] == IterationDatabase[iteration-1][2]:
@@ -841,13 +852,13 @@ while(True):
         p = LastTouchedElement
         restoreArtifact(LastTouchedElement, LastTouchedValue)
         validationElem(LastTouchedElement, LastTouchedValue, 1)
-        if iteration > 0 and exitCase():
+        if iteration > 0 and exitCase() or iteration > 200:
             break
         LastTouchedElement, LastTouchedValue = actionArtifact()
     else:
         print("WORSE THAN PREVIOUS ITERATION")
         validationElem(LastTouchedElement, LastTouchedValue, 2)
-        if iteration > 0 and exitCase():
+        if iteration > 0 and exitCase() or iteration > 200:
             break
         restoreArtifact(LastTouchedElement, LastTouchedValue)
         
