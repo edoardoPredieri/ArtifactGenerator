@@ -282,7 +282,6 @@ def actionArtifact():
                     
     if importantFile == "" and importantKey == "":
         print("Error: actionArtifact")
-        print(KeyDatabase)
         return None, None
 
     if maxWeightFile >= maxWeightKey:
@@ -847,6 +846,8 @@ while(True):
         if iteration > 0 and exitCase() or iteration > 200:
             break
         LastTouchedElement, LastTouchedValue = actionArtifact()
+        if LastTouchedElement == None and LastTouchedValue == None:
+            break
     elif IterationDatabase[iteration][2] == IterationDatabase[iteration-1][2]:
         print("EQUAL TO PREVIOUS ITERATION")
         p = LastTouchedElement
@@ -855,6 +856,8 @@ while(True):
         if iteration > 0 and exitCase() or iteration > 200:
             break
         LastTouchedElement, LastTouchedValue = actionArtifact()
+        if LastTouchedElement == None and LastTouchedValue == None:
+            break
     else:
         print("WORSE THAN PREVIOUS ITERATION")
         validationElem(LastTouchedElement, LastTouchedValue, 2)
