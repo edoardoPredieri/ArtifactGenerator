@@ -1,11 +1,20 @@
 import os
 from winreg import *
+import time
 
 
-BluePill_evasion_path = "C:/Pin311/Iterations/"             #Path of evasion.log files
-BluePill_blackListFile_path = "C:/Pin311/blacklistFile.txt" #Path to blacklist file
-BluePill_blackListKey_path = "C:/Pin311/blacklistKey.txt"   #Path to blacklist key
+BluePill_evasion_path = "C:/Users/PredieriEd/Desktop/Shared_Mal_Folder/out/"             #Path of evasion.log files
+BluePill_blackListFile_path = "C:/Users/PredieriEd/Desktop/Shared_Mal_Folder/in/blacklistFile.txt" #Path to blacklist file
+BluePill_blackListKey_path = "C:/Users/PredieriEd/Desktop/Shared_Mal_Folder/in/blacklistKey.txt"   #Path to blacklist key
 
+ToCreateFile_path = "C:/Users/PredieriEd/Desktop/Shared_Mal_Folder/in/toCreateFile.txt" #Path to 
+ToCreateKey_path = "C:/Users/PredieriEd/Desktop/Shared_Mal_Folder/in/toCreateKey.txt"   #Path to
+Iteration_path = "C:/Users/PredieriEd/Desktop/Shared_Mal_Folder/in/iteration.txt"
+
+findFile_path = "C:/Users/PredieriEd/Desktop/Shared_Mal_Folder/find/toSearchFile.txt"
+responseFile_path = "C:/Users/PredieriEd/Desktop/Shared_Mal_Folder/find/responseFile.txt"
+findKey_path = "C:/Users/PredieriEd/Desktop/Shared_Mal_Folder/find/toSearchKey.txt"
+responseKey_path = "C:/Users/PredieriEd/Desktop/Shared_Mal_Folder/find/responseKey.txt"
 
 #Weighted list of file manipulation commands
 FileCommandList = {"CreateFile" : 1, "CreateFileA" : 1, "CreateFileW" : 1,
@@ -122,6 +131,9 @@ whitelistValue = [["Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows
 noExistFiles = []           #List of Files to be "delete" through BluePill
 noExistKeys = []            #List of Keys to be "delete" through BluePill
 
+toCreateFiles = []
+toCreatekeys = {}
+
 FileDatabase = {}           #File: [weight, isPresent, endAction, flag]
 KeyDatabase = {}            #Key:  [weight, valueKey[], isPresent[], endAction[], flag[]]
 IterationDatabase = {}      #Iteration: [FileDatabase, weight]
@@ -130,6 +142,13 @@ IterationDatabase = {}      #Iteration: [FileDatabase, weight]
 def writeBlackListFile():
     f = open(BluePill_blackListFile_path,"w")
     for i in noExistFiles:
+        f.write(i+'\n')
+    f.close()
+
+
+def writeToCreateFile():
+    f = open(ToCreateFile_path,"w")
+    for i in toCreateFiles:
         f.write(i+'\n')
     f.close()
 
@@ -148,6 +167,12 @@ def writeBlackListKey():
             f.write(s+'\n')
         else:
             f.write(i+'\n')
+    f.close()
+
+def writeToCreateKey():
+    f = open(ToCreateKey_path,"w")
+    for i in toCreatekeys.keys():
+        f.write(i+";"+toCreatekeys[i]+'\n')
     f.close()
 
 
@@ -218,40 +243,25 @@ def calculateIterWeight(actualEvasionPath, initialLinenumber, initialFilesNumber
 
 
 def findFile(targetFile):
-    l = targetFile.split("\\")
-    name = l[len(l)-1]
-    path = "".join(str(elem)+"\\\\" for elem in l[0:len(l)-1]).strip()
-    for files in os.listdir(path):
-        if name == "*.*" and len(files)> 1:
-            return 1
-        if name in files:
-            return 1
-    return 0
+    f = open (findFile_path, "w")
+    f.write(targetFile)
+    f.close()
+    os.system('VBoxManage --nologo guestcontrol "Malware_Evasion" run --exe "Z://Run_FindFile.bat" --username Edo --password edoardo1 --putenv "DISPLAY=:0" --wait-stdout')
+    f = open (responseFile_path, "r")
+    res = f.readline()
+    f.close()
+    return int(res)
 
 
 def findKey(targetKey, valueKey):
-    try:
-        l = targetKey.split("\\")
-        aReg = None
-        if l[0] == "Machine" or l[0] == "MACHINE":
-             aReg = ConnectRegistry(None, HKEY_LOCAL_MACHINE)
-        if l[0] == "Root" or l[0] == "ROOT":
-            aReg = ConnectRegistry(None, HKEY_CLASSES_ROOT)
-        if l[0] == "User" or l[0] == "USER":
-            aReg = ConnectRegistry(None, HKEY_CURRENT_USER)
-        key = "".join(str(elem)+"\\" for elem in l[1:len(l)]).strip()
-        
-        k = OpenKey(aReg, key)
-        
-        if valueKey == "":
-            CloseKey(k)
-            return 1
-        else:
-            value = QueryValueEx(k, valueKey)
-            CloseKey(k)
-            return 1
-    except:
-        return 0
+    f = open (findKey_path, "w")
+    f.write(targetKey+";"+valueKey)
+    f.close()
+    os.system('VBoxManage --nologo guestcontrol "Malware_Evasion" run --exe "Z://Run_FindKey.bat" --username Edo --password edoardo1 --putenv "DISPLAY=:0" --wait-stdout')
+    f = open (responseKey_path, "r")
+    res = f.readline()
+    f.close()
+    return int(res)
     
     
 def actionArtifact():
@@ -291,9 +301,27 @@ def actionArtifact():
              name = l[len(l)-1]
              path = "".join(str(elem)+"\\\\" for elem in l[0:len(l)-1])
              if name == "*.*":
-                 noExistFiles.append((path+"ag.txt").upper())
-                 writeBlackListFile()
+                if path+"ag.txt" in toCreateFiles:
+                    toCreateFiles.remove((path+"ag"+name[1:len(name)]).upper())
+                    writeToCreateFile()
+                    FileDatabase[importantFile][1] = 0
+                    FileDatabase[importantFile][3] = True
+                noExistFiles.append((path+"ag.txt").upper())
+                writeBlackListFile()
+             elif "*" in name:
+                if path+"ag"+name[1:len(name)] in toCreateFiles:
+                    toCreateFiles.remove((path+"ag"+name[1:len(name)]).upper())
+                    writeToCreateFile()
+                    FileDatabase[importantFile][1] = 0
+                    FileDatabase[importantFile][3] = True
+                noExistFiles.append(path+"ag"+name[1:len(name)])
+                writeBlackListFile()
              else:
+                 if importantFile in toCreateFiles:
+                    toCreateFiles.remove(importantFile.upper())
+                    writeToCreateFile()
+                    FileDatabase[importantFile][1] = 0
+                    FileDatabase[importantFile][3] = True
                  noExistFiles.append(importantFile.upper())
                  writeBlackListFile()
              FileDatabase[importantFile][1] = 0
@@ -308,32 +336,28 @@ def actionArtifact():
                     writeBlackListFile()
                     FileDatabase[importantFile][1] = 1
                     FileDatabase[importantFile][3] = True
-                    return importantFile
-                f = open (path+"ag.txt", "w")
-                f.write("Created by Artifact Generator")
-                f.close()
+                    
+                toCreateFilesappend(path+"ag.txt")
+                writeToCreateFile()
             elif "*" in name:
                 if (path+"ag"+name[1:len(name)]).upper() in noExistFiles:
                     noExistFiles.remove((path+"ag"+name[1:len(name)]).upper())
                     writeBlackListFile()
                     FileDatabase[importantFile][1] = 1
                     FileDatabase[importantFile][3] = True
-                    return importantFile
-                f = open (path+"ag"+name[1:len(name)], "w")
-                f.write("Created by Artifact Generator")
-                f.close()
+                    
+                toCreateFiles.append(path+"ag"+name[1:len(name)])
+                writeToCreateFile()
             else:
                 if importantFile.upper() in noExistFiles:
                     noExistFiles.remove(importantFile.upper())
                     writeBlackListFile()
                     FileDatabase[importantFile][1] = 1
                     FileDatabase[importantFile][3] = True
-                    return importantFile
-                f = open (importantFile, "w")
-                f.write("Created by Artifact Generator")
-                f.close()
+                    
+                toCreateFiles.append(importantFile)
+                writeToCreateFile()
             FileDatabase[importantFile][1] = 1
-
         FileDatabase[importantFile][3] = True
         return importantFile, None
             
@@ -341,6 +365,12 @@ def actionArtifact():
         if len(KeyDatabase[importantKey][1]) == 0 or importantValue == None:
             if KeyDatabase[importantKey][2][0] == 1:
                 print("Deleting: "+importantKey+"...")
+                if importantKey in toCreatekeys.keys():
+                    del toCreatekeys[importantKey]
+                    writeToCreateKey()
+                    KeyDatabase[importantKey][2][0] = 0
+                    KeyDatabase[importantKey][4][0] = True
+                    
                 noExistKeys.append(importantKey.upper()+";")
                 writeBlackListKey()
                 KeyDatabase[importantKey][2][0] = 0
@@ -349,26 +379,12 @@ def actionArtifact():
                 if importantKey.upper()+";" in noExistKeys:
                     noExistKeys.remove(importantKey.upper()+";")
                     writeBlackListKey()
-                
                     KeyDatabase[importantKey][2][0] = 1
                     KeyDatabase[importantKey][4][0] = True
-                    return importantKey
-                try:
-                    l = importantKey.split("\\")
-                    k = "".join(str(elem)+"\\" for elem in l[1:len(l)])
-                    if l[0] == "Machine" or l[0] == "MACHINE":
-                        CreateKey(HKEY_LOCAL_MACHINE, k)
-                    if l[0] == "Root" or l[0] == "ROOT":
-                        CreateKey(HKEY_CLASSES_ROOT, k)
-                    if l[0] == "User" or l[0] == "USER":
-                        CreateKey(HKEY_CURRENT_USER, k)
-                except:
-                    print("Error during creation: "+importantKey)
-                    del KeyDatabase[importantKey]
-                    return importantKey, None
-
+                    
+                toCreatekeys[importantKey] = ""
+                writeToCreateKey()
                 KeyDatabase[importantKey][2][0] = 1
-                 
             KeyDatabase[importantKey][4][0] = True
             return importantKey, None
 
@@ -376,6 +392,12 @@ def actionArtifact():
             pos = (KeyDatabase[importantKey][1]).index(importantValue) + 1
             if KeyDatabase[importantKey][2][pos] == 1:
                 print("Deleting: "+importantKey+"  "+importantValue+"...")
+                if importantKey in toCreatekeys.keys() and toCreatekeys[importantKey] == importantValue:
+                    del toCreatekeys[importantKey]
+                    writeToCreateKey()
+                    KeyDatabase[importantKey][2][pos] = 0
+                    KeyDatabase[importantKey][4][pos] = True
+                    
                 noExistKeys.append("A;"+importantValue.upper())
                 writeBlackListKey()
                 KeyDatabase[importantKey][2][pos] = 0
@@ -384,35 +406,11 @@ def actionArtifact():
                 if "A;"+importantValue.upper() in noExistKeys:
                     noExistKeys.remove("A;"+importantValue.upper())
                     writeBlackListKey()
-                
                     KeyDatabase[importantKey][2][pos] = 1
                     KeyDatabase[importantKey][4][pos] = True
-                    return importantKey, importantValue
-                
-                l = importantKey.split("\\")
-                key = "".join(str(elem)+"\\" for elem in l[1:len(l)])
-                aReg = None
-                if l[0] == "Machine" or l[0] == "MACHINE":
-                    aReg = ConnectRegistry(None, HKEY_LOCAL_MACHINE)
-                if l[0] == "Root" or l[0] == "ROOT":
-                    aReg = ConnectRegistry(None, HKEY_CLASSES_ROOT)
-                if l[0] == "User" or l[0] == "USER":
-                    aReg = ConnectRegistry(None, HKEY_CURRENT_USER)
-
-                try:
-                    k = OpenKey(aReg, key, 0 ,KEY_SET_VALUE)
-                except:
-                    if l[0] == "Machine" or l[0] == "MACHINE":
-                        CreateKey(HKEY_LOCAL_MACHINE, key)
-                    if l[0] == "Root" or l[0] == "ROOT":
-                        CreateKey(HKEY_CLASSES_ROOT, key)
-                    if l[0] == "User" or l[0] == "USER":
-                        CreateKey(HKEY_CURRENT_USER, key)
-                    k = OpenKey(aReg, key, 0 ,KEY_SET_VALUE)
-
-                SetValueEx(k, importantValue, 0, REG_SZ, "1")
-                CloseKey(k)
-                
+                     
+                toCreatekeys[importantKey] = importantValue
+                writeToCreateKey()
                 KeyDatabase[importantKey][2][pos] = 1
 
             KeyDatabase[importantKey][4][pos] = True
@@ -427,9 +425,30 @@ def restoreArtifact(LastTouchedElem, LastTouchedValue):
             name = l[len(l)-1]
             path = "".join(str(elem)+"\\\\" for elem in l[0:len(l)-1])
             if name == "*.*":
+                if (path+"ag.txt") in toCreateFiles:
+                    toCreateFiles.remove((path+"ag"+name[1:len(name)]))
+                    writeToCreateFile()
+                    FileDatabase[LastTouchedElem][1] = 0
+                    FileDatabase[LastTouchedElem][3] = True
+                    
                 noExistFiles.append((path+"ag.txt").upper())
                 writeBlackListFile()
+            elif "*" in name:
+               if path+"ag"+name[1:len(name)] in toCreateFiles:
+                   toCreateFiles.remove((path+"ag"+name[1:len(name)]))
+                   writeToCreateFile()
+                   FileDatabase[LastTouchedElem][1] = 0
+                   FileDatabase[LastTouchedElem][3] = True
+                   
+               noExistFiles.append(path+"ag"+name[1:len(name)])
+               writeBlackListFile()
             else:
+                if LastTouchedElem in toCreateFiles:
+                   toCreateFiles.remove(LastTouchedElem)
+                   writeToCreateFile()
+                   FileDatabase[LastTouchedElem][1] = 0
+                   FileDatabase[LastTouchedElem][3] = True
+                   
                 noExistFiles.append(LastTouchedElem.upper())
                 writeBlackListFile()
             FileDatabase[LastTouchedElem][1] = 0
@@ -444,38 +463,41 @@ def restoreArtifact(LastTouchedElem, LastTouchedValue):
                     writeBlackListFile()
                     FileDatabase[LastTouchedElem][1] = 1
                     FileDatabase[LastTouchedElem][3] = True
-                    return
-                f = open (path+"ag.txt", "w")
-                f.write("Created by Artifact Generator")
-                f.close()
+                    
+                toCreateFiles.append(path+"ag.txt")
+                writeToCreateFile()
             elif "*" in name:
                 if (path+"ag"+name[1:len(name)]).upper() in noExistFiles:
                     noExistFiles.remove((path+"ag"+name[1:len(name)]).upper())
                     writeBlackListFile()
-                    FileDatabase[importantFile][1] = 1
-                    FileDatabase[importantFile][3] = True
-                    return importantFile
-                f = open (path+"ag"+name[1:len(name)], "w")
-                f.write("Created by Artifact Generator")
-                f.close()
+                    FileDatabase[LastTouchedElem][1] = 1
+                    FileDatabase[LastTouchedElem][3] = True
+                    
+                toCreateFiles.append(path+"ag"+name[1:len(name)])
+                writeToCreateFile()
             else:
                 if LastTouchedElem.upper() in noExistFiles:
                     noExistFiles.remove(LastTouchedElem.upper())
                     writeBlackListFile()
                     FileDatabase[LastTouchedElem][1] = 1
                     FileDatabase[LastTouchedElem][3] = True
-                    return
-                f = open (LastTouchedFile, "w")
-                f.write("Created by Artifact Generator")
-                f.close()
+                    
+                toCreateFiles.append(importantFile)
+                writeToCreateFile()
             FileDatabase[LastTouchedElem][1] = 1
-
         FileDatabase[LastTouchedElem][3] = True
+        return
 
     elif LastTouchedElem in KeyDatabase.keys():
         if len(KeyDatabase[LastTouchedElem][1]) == 0 or LastTouchedValue == None:
             if KeyDatabase[LastTouchedElem][2][0] == 1:
                 print("Deleting: "+LastTouchedElem+"...")
+                if LastTouchedElem in toCreatekeys.keys():
+                    del toCreatekeys[LastTouchedElem]
+                    writeToCreateKey()
+                    KeyDatabase[LastTouchedElem][2][0] = 0
+                    KeyDatabase[LastTouchedElem][4][0] = True
+                    
                 noExistKeys.append(LastTouchedElem.upper()+";")
                 writeBlackListKey()
                 KeyDatabase[LastTouchedElem][2][0] = 0
@@ -484,71 +506,37 @@ def restoreArtifact(LastTouchedElem, LastTouchedValue):
                 if LastTouchedElem.upper()+";" in noExistKeys:
                     noExistKeys.remove(LastTouchedElem.upper()+";")
                     writeBlackListKey()
-                
                     KeyDatabase[LastTouchedElem][2][0] = 1
                     KeyDatabase[LastTouchedElem][4][0] = True
-                    return
-
-                try:
-                    l = LastTouchedElem.split("\\")
-                    k = "".join(str(elem)+"\\" for elem in l[1:len(l)])
-                    if l[0] == "Machine" or l[0] == "MACHINE":
-                        CreateKey(HKEY_LOCAL_MACHINE, k)
-                    if l[0] == "Root" or l[0] == "ROOT":
-                        CreateKey(HKEY_CLASSES_ROOT, k)
-                    if l[0] == "User" or l[0] == "USER":
-                        CreateKey(HKEY_CURRENT_USER, k)
-                except:
-                    print("Error during creation: "+LastTouchedElem)
-                    del KeyDatabase[LastTouchedElem]
-                    return
-
+                    
+                toCreatekeys[LastTouchedElem] = ""
+                writeToCreateKey()
                 KeyDatabase[LastTouchedElem][2][0] = 1
-                 
             KeyDatabase[LastTouchedElem][4][0] = True
             return
-
         else:
             pos = (KeyDatabase[LastTouchedElem][1]).index(LastTouchedValue) + 1
             if KeyDatabase[LastTouchedElem][2][pos] == 1:
                 print("Deleting: "+LastTouchedElem+"  "+LastTouchedValue+"...")
+                if LastTouchedElem in toCreatekeys.keys() and toCreatekeys[LastTouchedElem] == LastTouchedValue:
+                    del toCreatekeys[LastTouchedElem]
+                    writeToCreateKey()
+                    KeyDatabase[LastTouchedElem][2][pos] = 0
+                    KeyDatabase[LastTouchedElem][4][pos] = True
+                    
                 noExistKeys.append("A;"+LastTouchedValue.upper())
                 writeBlackListKey()
                 KeyDatabase[LastTouchedElem][2][pos] = 0
             else:
                 print("Creating: "+LastTouchedElem+"  "+LastTouchedValue+"...")
-                if "A;"+LastTouchedValue.upper() in noExistKeys:
+                if "A;"+LastTouchedElem.upper() in noExistKeys:
                     noExistKeys.remove("A;"+LastTouchedValue.upper())
                     writeBlackListKey()
-                
                     KeyDatabase[LastTouchedElem][2][pos] = 1
                     KeyDatabase[LastTouchedElem][4][pos] = True
-                    return
-                
-                l = LastTouchedElem.split("\\")
-                key = "".join(str(elem)+"\\" for elem in l[1:len(l)])
-                aReg = None
-                if l[0] == "Machine" or l[0] == "MACHINE":
-                    aReg = ConnectRegistry(None, HKEY_LOCAL_MACHINE)
-                if l[0] == "Root" or l[0] == "ROOT":
-                    aReg = ConnectRegistry(None, HKEY_CLASSES_ROOT)
-                if l[0] == "User" or l[0] == "USER":
-                    aReg = ConnectRegistry(None, HKEY_CURRENT_USER)
-
-                try:
-                    k = OpenKey(aReg, key, 0 ,KEY_SET_VALUE)
-                except:
-                    if l[0] == "Machine" or l[0] == "MACHINE":
-                        CreateKey(HKEY_LOCAL_MACHINE, key)
-                    if l[0] == "Root" or l[0] == "ROOT":
-                        CreateKey(HKEY_CLASSES_ROOT, key)
-                    if l[0] == "User" or l[0] == "USER":
-                        CreateKey(HKEY_CURRENT_USER, key)
-                    k = OpenKey(aReg, key, 0 ,KEY_SET_VALUE)
-
-                SetValueEx(k, LastTouchedValue, 0, REG_SZ, "1")
-                CloseKey(k)
-                
+                    
+                toCreatekeys[LastTouchedElem] = LastTouchedValue
+                writeToCreateKey()
                 KeyDatabase[LastTouchedElem][2][pos] = 1
             KeyDatabase[LastTouchedElem][4][pos] = True
             
@@ -737,15 +725,21 @@ LastTouchedValue = ""                                                           
                                                                             
 print("ArtifactGenerator")
 print("")
-os.system("cd C:/Pin311 & echo F | xcopy ee.exe eeC.exe /y")
-while(True):
-    os.system("cd C:/Pin311 & pin -follow_execv -t bluepill32 -evasions -iter "+str(iteration)+" -- ee.exe")    #BluePill Execution Command
-   
-    if not findFile("C:\\Pin311\\ee.exe"):
-        print("Auto-Eliminate Malware   iteration = "+str(iteration))
-        os.system("cd C:/Pin311 & rename eeC.exe ee.exe")
-        iteration -= 1
 
+os.system('VBoxManage snapshot Malware_Evasion take "AG_Snap" --description "AG_Snap"')
+while(True):
+    
+    f = open(Iteration_path, "w")
+    f.write(str(iteration))
+    f.close()
+    
+    os.system('VBoxManage startvm "Malware_Evasion"')
+    os.system('VBoxManage guestproperty wait "Malware_Evasion" "/VirtualBox/GuestInfo/OS/LoggedInUsers"')    
+    time.sleep(8)
+    os.system('VBoxManage --nologo guestcontrol "Malware_Evasion" run --exe "Z://Run_AG.bat" --username Edo --password edoardo1 --putenv "DISPLAY=:0" --wait-stdout ')
+    
+    
+       
     actualEvasionPath = BluePill_evasion_path + str(iteration) + "/"                                            #Path of current evasion.log
 
     FilesNumber = 0                                                                                             #Number if files in folder (Different Processes)
@@ -763,7 +757,6 @@ while(True):
             line = f.readline()
 
             while line != "":
-                
                 thread = line.split(":")[0]
                 if thread not in threads :
                     threads.append(thread)
@@ -864,8 +857,16 @@ while(True):
         if iteration > 0 and exitCase() or iteration > 200:
             break
         restoreArtifact(LastTouchedElement, LastTouchedValue)
-        
+
+    os.system('VBoxManage controlvm Malware_Evasion poweroff')
+    os.system('VBoxManage snapshot Malware_Evasion restore AG_Snap')
     iteration += 1
+
+try:
+    os.system('VBoxManage controlvm Malware_Evasion poweroff')
+    os.system('VBoxManage snapshot Malware_Evasion delete AG_Snap')
+except:
+    print("Error during VM shutdown")
 
 try:
     f = open("report.txt","w")
