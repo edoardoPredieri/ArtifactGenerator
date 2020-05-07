@@ -16,9 +16,6 @@ responseFile_path = "C:/Users/PredieriEd/Desktop/Shared_Mal_Folder/find/response
 findKey_path = "C:/Users/PredieriEd/Desktop/Shared_Mal_Folder/find/toSearchKey.txt"
 responseKey_path = "C:/Users/PredieriEd/Desktop/Shared_Mal_Folder/find/responseKey.txt"
 
-path_list = [BluePill_blackListFile_path, BluePill_blackListKey_path, ToCreateFile_path, ToCreateKey_path, Iteration_path, findFile_path, responseFile_path,
-             findKey_path, responseKey_path]
-
 #Weighted list of file manipulation commands
 FileCommandList = {"CreateFile" : 1, "CreateFileA" : 1, "CreateFileW" : 1,
                    "GetFileAttributesA" : 4, "GetFileAttributesW" : 4, "GetFileAttributes" : 4,
@@ -105,7 +102,7 @@ GeneralCommandList = {"IsDebuggerPresent" : 5, "CheckRemoteDebuggerPresent" : 5,
 
 #List of Files to not modificate
 whitelistFile = ["SVCHOST.EXE", "ACLAYERS.DLL", "CMD.EXE", "SORTDEFAULT.NLS", "DESKTOP.INI", "EE.EXE", "EDO", "APPDATA", "USERS", "MOUNTPOINTMANAGER", "EN", "STATICCACHE.DAT", "OLEACCRC.DLL", "ACXTRNAL.DLL", "MSVFW32.DLL.MUI", "AVICAP32.DLL.MUI",
-                 "KERNELBASE.DLL.MUI", "MSCTF.DLL.MUI", "WERFAULT.EXE.MUI", "FAULTREP.DLL.MUI", "DWM.EXE", "EXPLORER.EXE", "WMIPRVSE.EXE", "PIN.EXE", "RSAENH.DLL"]
+                 "KERNELBASE.DLL.MUI", "MSCTF.DLL.MUI", "WERFAULT.EXE.MUI", "FAULTREP.DLL.MUI", "DWM.EXE", "EXPLORER.EXE", "WMIPRVSE.EXE", "PIN.EXE"]
 
 #List of Keys to not modificate
 whitelistKey = ["MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Session Manager", "Machine\\SYSTEM\\CurrentControlSet\\Control\\Session Manager", "\\REGISTRY\\MACHINE", "Machine\\SOFTWARE\\Policies\\Microsoft\\Windows\\Safer\\CodeIdentifiers",
@@ -141,6 +138,7 @@ FileDatabase = {}           #File: [weight, isPresent, endAction, flag]
 KeyDatabase = {}            #Key:  [weight, valueKey[], isPresent[], endAction[], flag[]]
 IterationDatabase = {}      #Iteration: [FileDatabase, weight]
 
+VM_number = 1
 
 def writeBlackListFile():
     f = open(BluePill_blackListFile_path,"w")
@@ -233,6 +231,7 @@ def calculateIterWeight(actualEvasionPath, initialLinenumber, initialFilesNumber
                     commandsWeight += GeneralCommandList[command]
                 if command in FileCommandList.keys() and line != lastLine:
                     commandsWeight += FileCommandList[command]
+
                 lastLine = line
                 linesNumber += 1
                 line = f.readline()
@@ -248,7 +247,7 @@ def findFile(targetFile):
     f = open (findFile_path, "w")
     f.write(targetFile)
     f.close()
-    os.system('VBoxManage --nologo guestcontrol "Malware_Evasion" run --exe "Z://Run_FindFile.bat" --username Edo --password edoardo1 --wait-stdout')
+    os.system('VBoxManage --nologo guestcontrol Malware_Evasion_1 run --exe "Z://Run_FindFile.bat" --username Edo --password edoardo1 --putenv "DISPLAY=:0" --wait-stdout')
     f = open (responseFile_path, "r")
     res = f.readline()
     f.close()
@@ -259,7 +258,7 @@ def findKey(targetKey, valueKey):
     f = open (findKey_path, "w")
     f.write(targetKey+";"+valueKey)
     f.close()
-    os.system('VBoxManage --nologo guestcontrol "Malware_Evasion" run --exe "Z://Run_FindKey.bat" --username Edo --password edoardo1 --wait-stdout')
+    os.system('VBoxManage --nologo guestcontrol "Malware_Evasion_1 run --exe "Z://Run_FindKey.bat" --username Edo --password edoardo1 --putenv "DISPLAY=:0" --wait-stdout')
     f = open (responseKey_path, "r")
     res = f.readline()
     f.close()
@@ -359,7 +358,6 @@ def actionArtifact():
             FileDatabase[importantFile][1] = 1
         FileDatabase[importantFile][3] = True
         return importantFile, None
-            
     else:
         if len(KeyDatabase[importantKey][1]) == 0 or importantValue == None:
             if KeyDatabase[importantKey][2][0] == 1:
@@ -403,7 +401,7 @@ def actionArtifact():
                     noExistKeys.remove("A;"+importantValue.upper())
                     writeBlackListKey()
                     KeyDatabase[importantKey][2][pos] = 1
-                    KeyDatabase[importantKey][4][pos] = True 
+                    KeyDatabase[importantKey][4][pos] = True
                 toCreatekeys[importantKey] = importantValue
                 writeToCreateKey()
                 KeyDatabase[importantKey][2][pos] = 1
@@ -431,7 +429,7 @@ def restoreArtifact(LastTouchedElem, LastTouchedValue):
                    toCreateFiles.remove((path+"ag"+name[1:len(name)]))
                    writeToCreateFile()
                    FileDatabase[LastTouchedElem][1] = 0
-                   FileDatabase[LastTouchedElem][3] = True 
+                   FileDatabase[LastTouchedElem][3] = True
                noExistFiles.append(path+"ag"+name[1:len(name)])
                writeBlackListFile()
             else:
@@ -470,7 +468,7 @@ def restoreArtifact(LastTouchedElem, LastTouchedValue):
                     writeBlackListFile()
                     FileDatabase[LastTouchedElem][1] = 1
                     FileDatabase[LastTouchedElem][3] = True
-                toCreateFiles.append(LastTouchedElem)
+                toCreateFiles.append(importantFile)
                 writeToCreateFile()
             FileDatabase[LastTouchedElem][1] = 1
         FileDatabase[LastTouchedElem][3] = True
@@ -695,13 +693,7 @@ def controlValue(targetKey, targetValue):
         return targetKey in KeyDatabase.keys() and len(l) > 2 and l[len(l)-1] != "\\"  and targetValue not in  KeyDatabase[targetKey][1] and not inWhiteListValue(targetKey, targetValue) and targetValue != None and targetValue != ""
     except:
         return False
-
-
-def clearFile():
-    for i in path_list:
-        f = open (i, "w")
-        f.write("")
-        f.close()
+    
         
     
     
@@ -715,21 +707,36 @@ LastTouchedValue = ""                                                           
 print("ArtifactGenerator")
 print("")
 
-os.system('VBoxManage snapshot Malware_Evasion take "AG_Snap" --description "AG_Snap"')
-os.system('VBoxManage startvm "Malware_Evasion" --type headless')
-os.system('VBoxManage guestproperty wait "Malware_Evasion" "/VirtualBox/GuestInfo/OS/LoggedInUsers"')    
-time.sleep(8)
-os.system('VBoxManage snapshot Malware_Evasion take "AG_SnapL" --description "AG_Snap" --live')
+os.system('VBoxManage snapshot Malware_Evasion_1 take AG_Snap --description AG_Snap')
+#os.system('VBoxManage snapshot Malware_Evasion_2 take AG_Snap --description AG_Snap')
 while(True):
-    
     f = open(Iteration_path, "w")
     f.write(str(iteration))
     f.close()
+    '''
+    if iteration == 0:
+        os.system('VBoxManage startvm Malware_Evasion_2 --type headless')
+        
+    if iteration % 2 == 0:
+        VM_number = 2
+        os.system('VBoxManage startvm Malware_Evasion_1 --type headless')
+        os.system('VBoxManage guestproperty wait Malware_Evasion_2 "/VirtualBox/GuestInfo/OS/LoggedInUsers"')
+        if iteration == 0:
+            time.sleep(6)
+        os.system('VBoxManage --nologo guestcontrol Malware_Evasion_2 run --exe "Z://Run_AG.bat" --username Edo --password edoardo1 --putenv "DISPLAY=:0" --wait-stdout ')
+    else:
+        VM_number = 1
+        os.system('VBoxManage startvm Malware_Evasion_2 --type headless')
+        os.system('VBoxManage guestproperty wait Malware_Evasion_1 "/VirtualBox/GuestInfo/OS/LoggedInUsers"')
+        os.system('VBoxManage --nologo guestcontrol Malware_Evasion_1 run --exe "Z://Run_AG.bat" --username Edo --password edoardo1 --putenv "DISPLAY=:0" --wait-stdout ')
+    '''
+        
     
-    #os.system('VBoxManage startvm "Malware_Evasion" --type headless')
-    #os.system('VBoxManage guestproperty wait "Malware_Evasion" "/VirtualBox/GuestInfo/OS/LoggedInUsers"')    
-    #time.sleep(8)
-    os.system('VBoxManage --nologo guestcontrol "Malware_Evasion" run --exe "Z://Run_AG.bat" --username Edo --password edoardo1 --wait-stdout ')
+    os.system('VBoxManage startvm Malware_Evasion_1 --type headless')
+    os.system('VBoxManage guestproperty wait Malware_Evasion_1 "/VirtualBox/GuestInfo/OS/LoggedInUsers"')    
+    time.sleep(8)
+    os.system('VBoxManage --nologo guestcontrol Malware_Evasion_1 run --exe "Z://Run_AG.bat" --username Edo --password edoardo1 --putenv "DISPLAY=:0" --wait-stdout ')
+    
        
     actualEvasionPath = BluePill_evasion_path + str(iteration) + "/"                                            #Path of current evasion.log
 
@@ -744,12 +751,8 @@ while(True):
     for file in os.listdir(actualEvasionPath):                                                                  #Read all files in the folder
         if "evasion" in file:
             f = open (actualEvasionPath + file,"r")
-
-            try:
-                line = f.readline()
-            except:
-                print("Error reading line")
-                line = f.readline()
+            
+            line = f.readline()
 
             while line != "":
                 thread = line.split(":")[0]
@@ -765,7 +768,6 @@ while(True):
                     except:
                         print("Error splitting REGKEY commad "+command)
                         key = ""
-                    
                     if controlKey(key):                                                                         #Verify the Key Correctness
                         targetKey = ClearKey(key)
                         isPresent = findKey(targetKey,"")                                                       #Verify if the Key is present
@@ -775,7 +777,6 @@ while(True):
                         targetKey = ClearKey(key)
                     else:
                         targetKey = ""
-
                 
                 #--------FILE Case-------------------------------------------------------------------------------------------------------------------------------                                                                 
                 elif command in FileCommandList.keys():
@@ -853,16 +854,24 @@ while(True):
             break
         restoreArtifact(LastTouchedElement, LastTouchedValue)
 
-    #os.system('VBoxManage controlvm Malware_Evasion poweroff')
-    os.system('VBoxManage snapshot Malware_Evasion restore AG_SnapL')
+    
+    #if iteration % 2 == 0:
+      #  os.system('VBoxManage controlvm Malware_Evasion_2 poweroff')
+     #   os.system('VBoxManage snapshot Malware_Evasion_2 restore AG_Snap')
+    #else:
+    os.system('VBoxManage controlvm Malware_Evasion_1 poweroff')
+    os.system('VBoxManage snapshot Malware_Evasion_1 restore AG_Snap')
     iteration += 1
 
 try:
-
-    os.system('VBoxManage snapshot Malware_Evasion delete AG_SnapL')
-    
-    os.system('VBoxManage controlvm Malware_Evasion poweroff')
-    os.system('VBoxManage snapshot Malware_Evasion delete AG_Snap')
+    #if iteration % 2 == 0:
+    os.system('VBoxManage controlvm Malware_Evasion_1 poweroff')
+    #else:
+     #   os.system('VBoxManage controlvm Malware_Evasion_2 poweroff')
+    os.system('VBoxManage snapshot Malware_Evasion_1 restore AG_Snap')
+    os.system('VBoxManage snapshot Malware_Evasion_1 delete AG_Snap')
+    #os.system('VBoxManage snapshot Malware_Evasion_2 restore AG_Snap')
+    #os.system('VBoxManage snapshot Malware_Evasion_2 delete AG_Snap')
 except:
     print("Error during VM shutdown")
 
@@ -898,6 +907,13 @@ try:
     print("The complete report is in: "+BluePill_evasion_path + str(bestIt) + "/  with an increment of: "+str(perc)+"%")
     f.write("The complete report is in: "+BluePill_evasion_path + str(bestIt) + "/  with an increment of: "+str(perc)+"%")
     f.close()
-    clearFile()
+    noExistFiles.clear()
+    writeBlackListFile()
+    noExistKeys.clear()
+    writeBlackListKey()
+    toCreateFiles.clear()
+    writeToCreateFile()
+    toCreateKeys.clear()
+    writeToCreateKey()
 except:
     print("Error in during Report Writing")
