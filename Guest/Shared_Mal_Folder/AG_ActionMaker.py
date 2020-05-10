@@ -103,10 +103,21 @@ def ExecuteBluePill():
 
 
 
+try:
+    CreateElement()
+except:
+    print("Error Element Creation")
+    os.system("timeout 10")
+    
+try:
+    ExecuteBluePill()
+except:
+    print("Error BluePill")
+    os.system("timeout 10")
+    
 
-CreateElement()
-ExecuteBluePill()
-print("Done")
+
+
 
 
 

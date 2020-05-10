@@ -8,12 +8,14 @@ KEY
 	Machine\SOFTWARE\Policies\Microsoft\Windows NT\Rpc
 	Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\VFW
 	Machine\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders  AppData
+	Machine\SYSTEM\CurrentControlSet\Services\WebClient\NetworkProvider  Name
 
 
 
 
 FILES
 	C:\Windows\system32\spynet\server.exe
+	C:\Program Files\Internet Explorer\ag.dat
 	
 
 
