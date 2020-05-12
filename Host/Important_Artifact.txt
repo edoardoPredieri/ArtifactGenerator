@@ -14,6 +14,7 @@ KEY
 	Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\msasn1
 	Machine\SOFTWARE\Microsoft\CTF
 	Machine\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\KnownFolderSettings
+	Deleting: Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion  CurrentBuildNumber
 
 
 

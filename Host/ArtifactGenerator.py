@@ -107,7 +107,7 @@ GeneralCommandList = {"IsDebuggerPresent" : 5, "CheckRemoteDebuggerPresent" : 5,
                       "NtOpenKey" : 2, "NtEnumerateKey" :2 , "NtQueryValueKey":2 , "NtQueryAttributesFile" :2}
 
 #List of Files to not modificate
-whitelistFile = ["SVCHOST.EXE", "ACLAYERS.DLL", "CMD.EXE", "SORTDEFAULT.NLS", "DESKTOP.INI", "EE.EXE", "EDO", "APPDATA", "USERS", "MOUNTPOINTMANAGER", "EN", "STATICCACHE.DAT", "OLEACCRC.DLL", "ACXTRNAL.DLL", "MSVFW32.DLL.MUI", "AVICAP32.DLL.MUI",
+whitelistFile = ["SVCHOST.EXE", "ACLAYERS.DLL", "CMD.EXE", "SORTDEFAULT.NLS", "DESKTOP.INI", "EE.EXE", "APPDATA", "MOUNTPOINTMANAGER", "EN", "STATICCACHE.DAT", "OLEACCRC.DLL", "ACXTRNAL.DLL", "MSVFW32.DLL.MUI", "AVICAP32.DLL.MUI",
                  "KERNELBASE.DLL.MUI", "MSCTF.DLL.MUI", "WERFAULT.EXE.MUI", "FAULTREP.DLL.MUI", "DWM.EXE", "EXPLORER.EXE", "WMIPRVSE.EXE", "PIN.EXE", "RSAENH.DLL", "SXBOY.EXE",
                  "OSSPROXY.PDB"]
 
@@ -128,7 +128,7 @@ whitelistKey = ["MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Session Manager", 
                 "Machine\\SYSTEM\\CurrentControlSet\\Control\\Nls\\CustomLocale", "Machine\\SOFTWARE\\Microsoft\\CTF\\KnownClasses", "Machine\\SOFTWARE\\Microsoft\\CTF\\DirectSwitchHotkeys", "Machine\\SOFTWARE\\Policies\\Microsoft\\SQMClient\\Windows", "Machine\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer",
                 "Machine\\SYSTEM\\CurrentControlSet\\Control\\ComputerName\\ActiveComputerName", "Machine\\CONTROL\\NetworkProvider\\HwOrder", "Machine\\SYSTEM\\CurrentControlSet\\Services\\Winsock\\Parameters", "Machine\\SYSTEM\\CurrentControlSet\\Services\\Tcpip6\\Parameters\\Winsock",
                 "Machine\\SYSTEM\\CurrentControlSet\\Services\\Psched\\Parameters\\Winsock", "Machine\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\\Winsock", "Machine\\SYSTEM\\CurrentControlSet\\Services\\RDPNP\\NetworkProvider", "Machine\\SYSTEM\\CurrentControlSet\\Services\\WebClient\\NetworkProvider",
-                "Machine\\SYSTEM\\CurrentControlSet\\Services\\DNS", "Machine\\SYSTEM\\CurrentControlSet\\Services\\Winsock\\Setup Migration\\Providers"]
+                "Machine\\SYSTEM\\CurrentControlSet\\Services\\DNS", "Machine\\SYSTEM\\CurrentControlSet\\Services\\Winsock\\Setup Migration\\Providers", "Machine\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\PeerDist\\Service"]
 
 whitelistValue = [["Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows", "RunDiagnosticLoggingApplicationManagement"], ["Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\GRE_Initialize", "DisableMetaFiles"], ["Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options", "EnableDefaultReply"],
                   ["Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows", "NotifySettingChanges"], ["Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows", "ExecutablesToTrace"], ["Machine\MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers", "C:\Pin311\ee.exe"],
@@ -256,12 +256,13 @@ def calculateIterWeight(actualEvasionPath, initialFilesNumber, initialThreadsNum
                     elif line != lastLine:
                         commandsWeight += 1
                 lastLine = line
-                try:
-                    line = f.readline()
-                except:
-                    #print("Error reading line")
-                    #line = f.readline()
-                    None
+                while (True):
+                    try:
+                        line = f.readline()
+                        break
+                    except:
+                        #print("Error reading line")
+                        None
             f.close()
         endFilesNumber += 1 
     FilesNumberDiff = endFilesNumber - initialFilesNumber          #Processes Number Difference
@@ -679,12 +680,14 @@ def getBestIteration():
 def inWhiteListFile(file):
     l = file.split("\\")
     name = l[len(l)-1]
-    if name in whitelistFile:
-        return True
-    for i in whitelistFile:
-        if i == file:
+    clearF = clearPath(file)
+    for f in whitelistFile:
+        if f in file or f in file.upper() or f in clearF or f in clearF.upper():
             return True
     return False
+    
+    
+    
 
 def inWhiteListKey(key):
     return ClearKey(key) in whitelistKey
@@ -731,7 +734,7 @@ def controlKey2(targetKey):
     
 
 def controlFile(targetFile):
-    return not inDatabaseFile(targetFile) and len(targetFile) > 3 and "C:" in targetFile and not inWhiteListFile(targetFile.upper()) and targetFile[len(targetFile)-1] != "\\"
+    return not inDatabaseFile(targetFile) and len(targetFile) > 3 and "C:" in targetFile and not inWhiteListFile(targetFile) and targetFile[len(targetFile)-1] != "\\"
 
 
 def controlValue(targetKey, targetValue):
@@ -830,11 +833,13 @@ while(True):
         if "evasion" in file:
             f = open (actualEvasionPath + file,"r")
 
-            try:
-                line = f.readline()
-            except:
-                #print("Error reading line")
-                line = f.readline()
+            while (True):
+                try:
+                    line = f.readline()
+                    break
+                except:
+                    #print("Error reading line")
+                    None
 
             while line != "":
                 thread = line.split(":")[0]
@@ -884,7 +889,9 @@ while(True):
                             isPresent = findFile(targetFile)                                                    #Verify if the File is present
                             FileDatabase[targetFile] = [weight, isPresent, None, False]                         #Add File to Database
                         except:
-                            whitelistFile.append(targetFile.upper())
+                            l = targetFile.split("\\")
+                            name = l[len(l)-1]
+                            whitelistFile.append(name.upper())
                             if iteration > 0:
                                 add_value-=100
                             print("Error file: "+targetFile)
@@ -904,11 +911,13 @@ while(True):
                         KeyDatabase[targetKey][0] = weight                                                      #Update the Key Database
                         KeyDatabase[targetKey][4].append(False)
 
-                try:
-                    line = f.readline()
-                except:
-                    #print("Error reading line")
-                    line = f.readline()
+                while (True):
+                    try:
+                        line = f.readline()
+                        break
+                    except:
+                        #print("Error reading line")
+                        None
                 if line == PreviousLine:
                     line = f.readline()
                 PreviousLine = line
