@@ -50,7 +50,7 @@ FileNameList = {"VIRTUALBOX" : 5, "VBOX" : 5, "ORACLE" : 5, "GUEST" : 4, "PHYSIC
                 "FOOBAR" : 3,
                 "DRIVERS\\PRLETH" : 4, "DRIVERS\\PRLFS" : 4, "DRIVERS\\PRLMOUSE" : 4, "DRIVERS\\PRLVIDEO" : 4, "DRIVERS\\TIME" : 4,
                 "*.*" : 2,
-                "SERVICES.EXE": 10}
+                "SERVICES.EXE": 10, "WINDOWS\\SYSTEM32" : 3}
 
 #Weighted Regkeys path
 RegKeyList = {"sandbox" : 5, "Hyper-V" : 5,
@@ -108,7 +108,8 @@ GeneralCommandList = {"IsDebuggerPresent" : 5, "CheckRemoteDebuggerPresent" : 5,
 
 #List of Files to not modificate
 whitelistFile = ["SVCHOST.EXE", "ACLAYERS.DLL", "CMD.EXE", "SORTDEFAULT.NLS", "DESKTOP.INI", "EE.EXE", "EDO", "APPDATA", "USERS", "MOUNTPOINTMANAGER", "EN", "STATICCACHE.DAT", "OLEACCRC.DLL", "ACXTRNAL.DLL", "MSVFW32.DLL.MUI", "AVICAP32.DLL.MUI",
-                 "KERNELBASE.DLL.MUI", "MSCTF.DLL.MUI", "WERFAULT.EXE.MUI", "FAULTREP.DLL.MUI", "DWM.EXE", "EXPLORER.EXE", "WMIPRVSE.EXE", "PIN.EXE", "RSAENH.DLL", "SXBOY.EXE"]
+                 "KERNELBASE.DLL.MUI", "MSCTF.DLL.MUI", "WERFAULT.EXE.MUI", "FAULTREP.DLL.MUI", "DWM.EXE", "EXPLORER.EXE", "WMIPRVSE.EXE", "PIN.EXE", "RSAENH.DLL", "SXBOY.EXE",
+                 "OSSPROXY.PDB"]
 
 #List of Keys to not modificate
 whitelistKey = ["MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Session Manager", "Machine\\SYSTEM\\CurrentControlSet\\Control\\Session Manager", "\\REGISTRY\\MACHINE", "Machine\\SOFTWARE\\Policies\\Microsoft\\Windows\\Safer\\CodeIdentifiers",
@@ -127,7 +128,7 @@ whitelistKey = ["MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Session Manager", 
                 "Machine\\SYSTEM\\CurrentControlSet\\Control\\Nls\\CustomLocale", "Machine\\SOFTWARE\\Microsoft\\CTF\\KnownClasses", "Machine\\SOFTWARE\\Microsoft\\CTF\\DirectSwitchHotkeys", "Machine\\SOFTWARE\\Policies\\Microsoft\\SQMClient\\Windows", "Machine\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer",
                 "Machine\\SYSTEM\\CurrentControlSet\\Control\\ComputerName\\ActiveComputerName", "Machine\\CONTROL\\NetworkProvider\\HwOrder", "Machine\\SYSTEM\\CurrentControlSet\\Services\\Winsock\\Parameters", "Machine\\SYSTEM\\CurrentControlSet\\Services\\Tcpip6\\Parameters\\Winsock",
                 "Machine\\SYSTEM\\CurrentControlSet\\Services\\Psched\\Parameters\\Winsock", "Machine\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\\Winsock", "Machine\\SYSTEM\\CurrentControlSet\\Services\\RDPNP\\NetworkProvider", "Machine\\SYSTEM\\CurrentControlSet\\Services\\WebClient\\NetworkProvider",
-                "Machine\\SYSTEM\\CurrentControlSet\\Services\\DNS"]
+                "Machine\\SYSTEM\\CurrentControlSet\\Services\\DNS", "Machine\\SYSTEM\\CurrentControlSet\\Services\\Winsock\\Setup Migration\\Providers"]
 
 whitelistValue = [["Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows", "RunDiagnosticLoggingApplicationManagement"], ["Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\GRE_Initialize", "DisableMetaFiles"], ["Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options", "EnableDefaultReply"],
                   ["Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows", "NotifySettingChanges"], ["Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows", "ExecutablesToTrace"], ["Machine\MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers", "C:\Pin311\ee.exe"],
@@ -154,6 +155,8 @@ last = 0
 n_equal = 0
 previous_n = 0
 peak = False
+
+
 
 
 def writeBlackListFile():
@@ -214,7 +217,7 @@ def calculateWeightKey(key, value):
     valueKey = 2
     valueValue = 0
     for k in RegKeyList.keys():
-        if k in key:
+        if k in key: #or k.upper() in key.upper():
             valueKey = RegKeyList[k]
 
     for k in RegKeyValueList.keys():
@@ -225,12 +228,13 @@ def calculateWeightKey(key, value):
     return valueKey
 
 
-def calculateIterWeight(actualEvasionPath, initialLinenumber, initialFilesNumber, initialThreadsNumber):
+def calculateIterWeight(actualEvasionPath, initialFilesNumber, initialThreadsNumber):
     endFilesNumber = 0
     commandsWeight = 0
     threads = []
     linesNumber = 0
     lastLine = ""
+    iterLinesList = []
     for file in os.listdir(actualEvasionPath):
         if "evasion" in file:
             f = open (actualEvasionPath + file,"r")
@@ -243,19 +247,26 @@ def calculateIterWeight(actualEvasionPath, initialLinenumber, initialFilesNumber
                     command = line.split("[")[1].split("]")[0]
                 except:
                     command = ""
-                if command in GeneralCommandList.keys() and line != lastLine:
-                    commandsWeight += GeneralCommandList[command]
-                if command in FileCommandList.keys() and line != lastLine:
-                    commandsWeight += FileCommandList[command]
+                if  line not in iterLinesList:
+                    iterLinesList.append(line)
+                    if command in GeneralCommandList.keys() and line != lastLine:
+                        commandsWeight += GeneralCommandList[command]
+                    elif command in FileCommandList.keys() and line != lastLine:
+                        commandsWeight += FileCommandList[command]
+                    elif line != lastLine:
+                        commandsWeight += 1
                 lastLine = line
-                linesNumber += 1
-                line = f.readline()
+                try:
+                    line = f.readline()
+                except:
+                    #print("Error reading line")
+                    #line = f.readline()
+                    None
             f.close()
         endFilesNumber += 1 
     FilesNumberDiff = endFilesNumber - initialFilesNumber          #Processes Number Difference
     ThreadsNumberDiff =  len(threads) - initialThreadsNumber       #Threads Number Difference
-    lineNumberDiff = linesNumber - initialLinenumber               #Lines Number Difference
-    return (commandsWeight + 2*(lineNumberDiff)) * (FilesNumberDiff + ThreadsNumberDiff +1)
+    return (commandsWeight) * (FilesNumberDiff + ThreadsNumberDiff +1)
 
 
 def findFile(targetFile):
@@ -444,8 +455,6 @@ def restoreArtifact(LastTouchedElem, LastTouchedValue):
                 if (path+"ag.txt") in toCreateFiles:
                     toCreateFiles.remove((path+"ag"+name[1:len(name)]))
                     writeToCreateFile()
-                    FileDatabase[LastTouchedElem][1] = 0
-                    FileDatabase[LastTouchedElem][3] = True
                 if last == 2 or last == 4:
                     noExistFiles.append((path+"ag.txt").upper())
                     writeBlackListFile()
@@ -453,8 +462,6 @@ def restoreArtifact(LastTouchedElem, LastTouchedValue):
                if path+"ag"+name[1:len(name)] in toCreateFiles:
                    toCreateFiles.remove((path+"ag"+name[1:len(name)]))
                    writeToCreateFile()
-                   FileDatabase[LastTouchedElem][1] = 0
-                   FileDatabase[LastTouchedElem][3] = True
                if last == 2 or last == 4:
                    noExistFiles.append(path+"ag"+name[1:len(name)])
                    writeBlackListFile()
@@ -462,12 +469,11 @@ def restoreArtifact(LastTouchedElem, LastTouchedValue):
                 if LastTouchedElem in toCreateFiles:
                    toCreateFiles.remove(LastTouchedElem)
                    writeToCreateFile()
-                   FileDatabase[LastTouchedElem][1] = 0
-                   FileDatabase[LastTouchedElem][3] = True
                 if last == 2 or last == 4:
                     noExistFiles.append(LastTouchedElem.upper())
                     writeBlackListFile()
             FileDatabase[LastTouchedElem][1] = 0
+            FileDatabase[LastTouchedElem][3] = True
         else:
             last = 2
             print("Creating: "+LastTouchedElem+"...")
@@ -502,8 +508,7 @@ def restoreArtifact(LastTouchedElem, LastTouchedValue):
                 toCreateFiles.append(LastTouchedElem)
                 writeToCreateFile()
             FileDatabase[LastTouchedElem][1] = 1
-        FileDatabase[LastTouchedElem][3] = True
-        return
+            FileDatabase[LastTouchedElem][3] = True
 
     elif LastTouchedElem in KeyDatabase.keys():
         if len(KeyDatabase[LastTouchedElem][1]) == 0 or LastTouchedValue == None:
@@ -512,12 +517,11 @@ def restoreArtifact(LastTouchedElem, LastTouchedValue):
                 if LastTouchedElem in toCreatekeys.keys():
                     del toCreatekeys[LastTouchedElem]
                     writeToCreateKey()
-                    KeyDatabase[LastTouchedElem][2][0] = 0
-                    KeyDatabase[LastTouchedElem][4][0] = True
                 if last == 2 or last == 4:
                     noExistKeys.append(LastTouchedElem.upper()+";")
                     writeBlackListKey()
                 KeyDatabase[LastTouchedElem][2][0] = 0
+                KeyDatabase[LastTouchedElem][4][0] = True
             else:
                 last = 4
                 print("Creating: "+LastTouchedElem+"...")
@@ -530,22 +534,20 @@ def restoreArtifact(LastTouchedElem, LastTouchedValue):
                 toCreatekeys[LastTouchedElem] = ""
                 writeToCreateKey()
                 KeyDatabase[LastTouchedElem][2][0] = 1
-            KeyDatabase[LastTouchedElem][4][0] = True
-            return
+                KeyDatabase[LastTouchedElem][4][0] = True
+
         else:
             pos = (KeyDatabase[LastTouchedElem][1]).index(LastTouchedValue) + 1
             if KeyDatabase[LastTouchedElem][2][pos] == 1:
-                last = 3
                 print("Deleting: "+LastTouchedElem+"  "+LastTouchedValue+"...")
                 if LastTouchedElem in toCreatekeys.keys() and toCreatekeys[LastTouchedElem] == LastTouchedValue:
                     del toCreatekeys[LastTouchedElem]
                     writeToCreateKey()
-                    KeyDatabase[LastTouchedElem][2][pos] = 0
-                    KeyDatabase[LastTouchedElem][4][pos] = True
-                    return
-                noExistKeys.append(LastTouchedElem+";"+LastTouchedValue.upper())
-                writeBlackListKey()
+                if last == 2 or last == 4:
+                    noExistKeys.append(LastTouchedElem+";"+LastTouchedValue.upper())
+                    writeBlackListKey()
                 KeyDatabase[LastTouchedElem][2][pos] = 0
+                KeyDatabase[LastTouchedElem][4][pos] = True
             else:
                 last = 4
                 print("Creating: "+LastTouchedElem+"  "+LastTouchedValue+"...")
@@ -558,7 +560,7 @@ def restoreArtifact(LastTouchedElem, LastTouchedValue):
                 toCreatekeys[LastTouchedElem] = LastTouchedValue
                 writeToCreateKey()
                 KeyDatabase[LastTouchedElem][2][pos] = 1
-            KeyDatabase[LastTouchedElem][4][pos] = True
+                KeyDatabase[LastTouchedElem][4][pos] = True
             
 
 
@@ -626,7 +628,7 @@ def clearPath(targetFile):
     path = ""
     for elem in l[2:len(l)]:
         if elem != l[len(l)-1]:
-            path += str(elem)+"\\\\"
+            path += str(elem)+"\\"
         else:
             path += str(elem)
     return path 
@@ -667,7 +669,6 @@ def getBestIteration():
     minn = IterationDatabase[0][0]
     best = 0
     for i in IterationDatabase.keys():
-        #val = calculateIterWeight(IterationDatabase[i][2], IterationDatabase[i][4], IterationDatabase[i][5], IterationDatabase[i][6])
         val = int(IterationDatabase[i][0])
         if val > maxx:
             maxx = val
@@ -678,8 +679,12 @@ def getBestIteration():
 def inWhiteListFile(file):
     l = file.split("\\")
     name = l[len(l)-1]
-    return name in whitelistFile
-
+    if name in whitelistFile:
+        return True
+    for i in whitelistFile:
+        if i == file:
+            return True
+    return False
 
 def inWhiteListKey(key):
     return ClearKey(key) in whitelistKey
@@ -705,7 +710,7 @@ def getCommand(line):
     try:    
         command = line.split("[")[1].split("]")[0]
     except:
-        print("Error splitting line "+line)
+        #print("Error splitting line "+line)
         command = ""
     return command
 
@@ -804,16 +809,16 @@ while(True):
            
     actualEvasionPath = BluePill_evasion_path + str(iteration) + "/"                                            #Path of current evasion.log
 
-    try:
-        f = open (actualEvasionPath+"behaviour.log","r")
-        f.close()
-    except:
-        print("----AG_ActionMaker Error----")
-        fixActionMaker()
-        os.system('VBoxManage --nologo guestcontrol "Malware_Evasion" run --exe "Z://Run_AG.bat" --username Edo --password edoardo1 --wait-stdout ')
+    while (True):
+        try:
+            f = open (actualEvasionPath+"behaviour.log","r")
+            f.close()
+            break
+        except:
+            print("----AG_ActionMaker Error----")
+            os.system('VBoxManage --nologo guestcontrol "Malware_Evasion" run --exe "Z://Run_AG.bat" --username Edo --password edoardo1 --wait-stdout ')
 
     FilesNumber = 0                                                                                             #Number if files in folder (Different Processes)
-    LinesNumber = 0                                                                                             #Number of lines (Commands) in the file
     threads = []                                                                                                #Number of different Treads ina file (Process)
 
     targetKey = ""
@@ -847,8 +852,9 @@ while(True):
                         key = ""
                     
                     if controlKey(key):                                                                         #Verify the Key Correctness
-                        if iteration > 0:
+                        if iteration > 1:
                             add_value+=100
+                            print("--NEW FIND--")
                         targetKey = ClearKey(key)
                         isPresent = findKey(targetKey,"")                                                       #Verify if the Key is present
                         weight = calculateWeightKey(targetKey, "")                                              #Calculate the Key Weight
@@ -878,14 +884,18 @@ while(True):
                             isPresent = findFile(targetFile)                                                    #Verify if the File is present
                             FileDatabase[targetFile] = [weight, isPresent, None, False]                         #Add File to Database
                         except:
+                            whitelistFile.append(targetFile.upper())
+                            if iteration > 0:
+                                add_value-=100
                             print("Error file: "+targetFile)
                             
                 #---------NTQUERYVALUEKEY Case---------------------------------------------------------------------------------------------------------------------
                 if command == "NtQueryValueKey":
                     valueKey = line.split("--")[1].strip()                                                      #Get the Query Value
                     if targetKey != "" and controlValue(targetKey, valueKey):
-                        if iteration > 0:
-                            add_value+=30
+                        if iteration > 1:
+                            print("--NEW FIND--")
+                            add_value+=50
                         KeyDatabase[targetKey][1].append(valueKey)                                              #Update the Key Database
                         isPresent = findKey(targetKey, valueKey)                                                #Verify if the Value is present
                         KeyDatabase[targetKey][2].append(isPresent)                                             #Update the Key Database
@@ -894,11 +904,10 @@ while(True):
                         KeyDatabase[targetKey][0] = weight                                                      #Update the Key Database
                         KeyDatabase[targetKey][4].append(False)
 
-                LinesNumber += 1
                 try:
                     line = f.readline()
                 except:
-                    print("Error reading line")
+                    #print("Error reading line")
                     line = f.readline()
                 if line == PreviousLine:
                     line = f.readline()
@@ -910,36 +919,36 @@ while(True):
         print("No file and Keys queries")
         break
 
-    iterationWeight = int(calculateIterWeight(actualEvasionPath, LinesNumber, FilesNumber, len(threads))) #+ add_value            #Calculate the Iteration Weight
+    iterationWeight = int(calculateIterWeight(actualEvasionPath, FilesNumber, len(threads)))             #Calculate the Iteration Weight
     plot_x.append(int(iteration))
     plot_y.append(int(iterationWeight))
     IterationDatabase[iteration] = [iterationWeight, noExistFiles.copy(), noExistKeys.copy(), toCreateFiles.copy(), toCreatekeys.copy()]
     if findPeak(int(iterationWeight)):
         break
     
-    if iteration == 0 or IterationDatabase[iteration][0] > IterationDatabase[iteration-1][0]:
-        print(str(iteration)+": BETTER THAN PREVIOUS ITERATION "+str(iterationWeight))
+    if iteration == 0 or IterationDatabase[iteration][0] + add_value > IterationDatabase[iteration-1][0]:
+        print(str(iteration+1)+": BETTER THAN PREVIOUS ITERATION "+str(iterationWeight))
         if iteration > 0:
             validationElem(LastTouchedElement, LastTouchedValue, 0)
-        if iteration > 0 and exitCase() or iteration > 200:
+        if iteration > 0 and exitCase() or iteration > 150:
             break
         LastTouchedElement, LastTouchedValue = actionArtifact()
         if LastTouchedElement == None and LastTouchedValue == None:
             break
-    elif IterationDatabase[iteration][0] == IterationDatabase[iteration-1][0]:
-        print(str(iteration)+": EQUAL TO PREVIOUS ITERATION "+str(iterationWeight))
+    elif IterationDatabase[iteration][0] + add_value == IterationDatabase[iteration-1][0]:
+        print(str(iteration+1)+": EQUAL TO PREVIOUS ITERATION "+str(iterationWeight))
         p = LastTouchedElement
         restoreArtifact(LastTouchedElement, LastTouchedValue)
         validationElem(LastTouchedElement, LastTouchedValue, 1)
-        if iteration > 0 and exitCase() or iteration > 200:
+        if iteration > 0 and exitCase() or iteration > 150:
             break
         LastTouchedElement, LastTouchedValue = actionArtifact()
         if LastTouchedElement == None and LastTouchedValue == None:
             break
     else:
-        print(str(iteration)+": WORSE THAN PREVIOUS ITERATION "+str(iterationWeight))
+        print(str(iteration+1)+": WORSE THAN PREVIOUS ITERATION "+str(iterationWeight))
         validationElem(LastTouchedElement, LastTouchedValue, 2)
-        if iteration > 0 and exitCase() or iteration > 200:
+        if iteration > 0 and exitCase() or iteration > 150:
             break
         restoreArtifact(LastTouchedElement, LastTouchedValue)
 

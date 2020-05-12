@@ -13,11 +13,26 @@ def findFile(targetFile):
             return 1
     return 0
 
+def findFile2(targetFile):
+    l = targetFile.split("\\")
+    name = l[len(l)-1]
+    
+    for files in os.listdir(targetFile):
+        if name == "*.*" and len(files)> 1:
+            return 1
+        if name in files:
+            return 1
+    return 0
 
 f = open (in_path,"r")
 f2 = open (out_path,"w")
 line = f.readline()
-ret = findFile(line)
+try:
+    ret = findFile(line)
+except:
+    None
+    ret = ""
+    #ret = findFile2(line)
 f2.write(str(ret))
 f.close()
 f2.close()

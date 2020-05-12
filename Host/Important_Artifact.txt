@@ -9,6 +9,11 @@ KEY
 	Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\VFW
 	Machine\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders  AppData
 	Machine\SYSTEM\CurrentControlSet\Services\WebClient\NetworkProvider  Name
+	Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows  DisableUserModeCallbackFilter
+	Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows  LoadAppInit_DLLs
+	Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\msasn1
+	Machine\SOFTWARE\Microsoft\CTF
+	Machine\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\KnownFolderSettings
 
 
 
