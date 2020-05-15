@@ -1,5 +1,6 @@
 import os
 import time
+import random
 from winreg import *
 from matplotlib import pyplot as plt
 
@@ -137,6 +138,9 @@ whitelistValue = [["Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows
                   ["Machine\SOFTWARE\Microsoft\Windows\CurrentVersion\Setup", "SourcePath"], ["Machine\SOFTWARE\Microsoft\Windows\CurrentVersion", "DevicePath"], ["Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\AeDebug", "Auto"]]
 
 
+peakList = ["Getaddrinfo", "Socket", "Connect", "Send", "Sendto", "Recv", "Recvfrom", "CloseSocket", "InternetOpen", "InternetConnect", "HttpOpenRequest", "HttpSendRequest", "InternetReadFile", "WinHttpOpen", "WinHttpConnect", "WinHttpOpenRequest", "WinHttpSendRequest", "WinHttpWriteData", "WinHttpReceiveResponse", "WinHttpQueryData",
+            "WinHttpReadData"]
+
 noExistFiles = []           #List of Files to be "delete" through BluePill
 noExistKeys = []            #List of Keys to be "delete" through BluePill
 
@@ -155,6 +159,8 @@ last = 0
 n_equal = 0
 previous_n = 0
 peak = False
+possiblyPeak = False
+startWeight = 0
 
 
 
@@ -229,6 +235,7 @@ def calculateWeightKey(key, value):
 
 
 def calculateIterWeight(actualEvasionPath, initialFilesNumber, initialThreadsNumber):
+    global possiblyPeak
     endFilesNumber = 0
     commandsWeight = 0
     threads = []
@@ -238,7 +245,12 @@ def calculateIterWeight(actualEvasionPath, initialFilesNumber, initialThreadsNum
     for file in os.listdir(actualEvasionPath):
         if "evasion" in file:
             f = open (actualEvasionPath + file,"r")
-            line = f.readline()
+            while (True):
+                    try:
+                        line = f.readline()
+                        break
+                    except:
+                        None
             while line != "":
                 thread = line.split(":")[0]
                 if thread not in threads :
@@ -253,6 +265,10 @@ def calculateIterWeight(actualEvasionPath, initialFilesNumber, initialThreadsNum
                         commandsWeight += GeneralCommandList[command]
                     elif command in FileCommandList.keys() and line != lastLine:
                         commandsWeight += FileCommandList[command]
+                    elif command in peakList and line != lastLine:
+                        print("-------Possibly Peak: "+command)
+                        possiblyPeak = True
+                        commandsWeight += 20
                     elif line != lastLine:
                         commandsWeight += 1
                 lastLine = line
@@ -686,8 +702,6 @@ def inWhiteListFile(file):
             return True
     return False
     
-    
-    
 
 def inWhiteListKey(key):
     return ClearKey(key) in whitelistKey
@@ -699,10 +713,12 @@ def inWhiteListValue(key, value):
             return True
     return False 
 
+
 def inDatabaseFile(file):
     if file not in FileDatabase.keys():        
         return clearPath(file) in FileDatabase.keys()
     return True
+
 
 def inDatabaseKey(key):
     return ClearKey(key) in KeyDatabase.keys() 
@@ -724,6 +740,7 @@ def controlKey(targetKey):
         return not inDatabaseKey(targetKey) and len(l) > 2 and l[len(l)-1] != "\\" and not inWhiteListKey(targetKey)
     except:
         return False
+
 
 def controlKey2(targetKey):
     try:
@@ -774,15 +791,19 @@ def findPeak(n):
     global previous_n
     global n_equal
     global peak
-    if previous_n - n <= 5 or previous_n - n > 5:
-        n_equal += 1
-        if peak and n_equal >= 10:
+    
+    rangeValue = int((startWeight * 2)/4)
+    
+    if n - previous_n >= -rangeValue and n - previous_n < rangeValue:
+        val = random.randint(1,100)
+        n_equal += 5
+        if peak and val <= n_equal:
             return True
+    
     else:
         n_equal = 0
-        if n > 8000:
+        if possiblyPeak and n > startWeight + 100:
             peak = True
-
 
     previous_n = n
     return False
@@ -916,10 +937,14 @@ while(True):
                         line = f.readline()
                         break
                     except:
-                        #print("Error reading line")
                         None
                 if line == PreviousLine:
-                    line = f.readline()
+                    while (True):
+                        try:
+                            line = f.readline()
+                            break
+                        except:
+                            None
                 PreviousLine = line
             f.close()
         FilesNumber += 1
@@ -929,6 +954,8 @@ while(True):
         break
 
     iterationWeight = int(calculateIterWeight(actualEvasionPath, FilesNumber, len(threads)))             #Calculate the Iteration Weight
+    if iteration == 0:
+        startWeight = int(iterationWeight)
     plot_x.append(int(iteration))
     plot_y.append(int(iterationWeight))
     IterationDatabase[iteration] = [iterationWeight, noExistFiles.copy(), noExistKeys.copy(), toCreateFiles.copy(), toCreatekeys.copy()]

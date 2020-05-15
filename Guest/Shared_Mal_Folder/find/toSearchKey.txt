@@ -1,1 +1,0 @@
-Machine\SOFTWARE\Policies\Microsoft\Windows NT\Rpc;EnableTcpPortScaling

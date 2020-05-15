@@ -15,6 +15,7 @@ KEY
 	Machine\SOFTWARE\Microsoft\CTF
 	Machine\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\KnownFolderSettings
 	Deleting: Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion  CurrentBuildNumber
+	Machine\SOFTWARE\Microsoft\Windows\CurrentVersion  ProgramFilesDir
 
 
 
