@@ -110,7 +110,7 @@ GeneralCommandList = {"IsDebuggerPresent" : 5, "CheckRemoteDebuggerPresent" : 5,
 #List of Files to not modificate
 whitelistFile = ["SVCHOST.EXE", "ACLAYERS.DLL", "CMD.EXE", "SORTDEFAULT.NLS", "DESKTOP.INI", "EE.EXE", "APPDATA", "MOUNTPOINTMANAGER", "EN", "STATICCACHE.DAT", "OLEACCRC.DLL", "ACXTRNAL.DLL", "MSVFW32.DLL.MUI", "AVICAP32.DLL.MUI",
                  "KERNELBASE.DLL.MUI", "MSCTF.DLL.MUI", "WERFAULT.EXE.MUI", "FAULTREP.DLL.MUI", "DWM.EXE", "EXPLORER.EXE", "WMIPRVSE.EXE", "PIN.EXE", "RSAENH.DLL", "SXBOY.EXE",
-                 "OSSPROXY.PDB"]
+                 "OSSPROXY.PDB", "SERVICES.EXE"]
 
 #List of Keys to not modificate
 whitelistKey = ["MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Session Manager", "Machine\\SYSTEM\\CurrentControlSet\\Control\\Session Manager", "\\REGISTRY\\MACHINE", "Machine\\SOFTWARE\\Policies\\Microsoft\\Windows\\Safer\\CodeIdentifiers",
@@ -141,7 +141,7 @@ whitelistValue = [["Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows
 peakList = ["Getaddrinfo", "Socket", "Connect", "Send", "Sendto", "Recv", "Recvfrom", "CloseSocket", "InternetOpen", "InternetConnect", "HttpOpenRequest", "HttpSendRequest", "InternetReadFile", "WinHttpOpen", "WinHttpConnect", "WinHttpOpenRequest", "WinHttpSendRequest", "WinHttpWriteData", "WinHttpReceiveResponse", "WinHttpQueryData",
             "WinHttpReadData"]
 
-noExistFiles = []           #List of Files to be "delete" through BluePill
+noExistFiles = ["C:\WINDOWS\SYSTEM32\SERVICES.EXE"]           #List of Files to be "delete" through BluePill
 noExistKeys = []            #List of Keys to be "delete" through BluePill
 
 toCreateFiles = []
@@ -360,7 +360,7 @@ def actionArtifact():
                     writeToCreateFile()
                     FileDatabase[importantFile][1] = 0
                     FileDatabase[importantFile][3] = True
-                noExistFiles.append(path+"ag"+name[1:len(name)])
+                noExistFiles.append((path+"ag"+name[1:len(name)]).upper())
                 writeBlackListFile()
              else:
                  if importantFile in toCreateFiles:
@@ -480,7 +480,7 @@ def restoreArtifact(LastTouchedElem, LastTouchedValue):
                    toCreateFiles.remove((path+"ag"+name[1:len(name)]))
                    writeToCreateFile()
                if last == 2 or last == 4:
-                   noExistFiles.append(path+"ag"+name[1:len(name)])
+                   noExistFiles.append((path+"ag"+name[1:len(name)]).upper())
                    writeBlackListFile()
             else:
                 if LastTouchedElem in toCreateFiles:
@@ -818,6 +818,8 @@ LastTouchedValue = ""                                                           
                                                                             
 print("ArtifactGenerator")
 print("")
+
+writeBlackListFile()
 
 os.system('VBoxManage snapshot Malware_Evasion take "AG_Snap" --description "AG_Snap"')
 os.system('VBoxManage startvm "Malware_Evasion" --type headless')

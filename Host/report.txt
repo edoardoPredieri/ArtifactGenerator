@@ -1,12 +1,14 @@
 ArtifactGenerator
 
 FILES TO BE DELETED
+C:\WINDOWS\SYSTEM32\SERVICES.EXE
+C:\WINDOWS\SYSTEM32\.HLP
 FILES TO BE CREATED
+C:\Windows\Help\.HLP
 KEYS TO BE DELETED
-Machine\SOFTWARE\Microsoft\Rpc  Value: MAXRPCSIZEMachine\SOFTWARE\Policies\Microsoft\Windows NT\Rpc  Value: EXTERRORINFORMATIONMachine\SOFTWARE\Policies\Microsoft\Windows NT\Rpc  Value: IGNOREDELEGATIONFAILUREMachine\SOFTWARE\Policies\Microsoft\Windows NT\Rpc  Value: RESTRICTREMOTECLIENTSMachine\SOFTWARE\Policies\Microsoft\Windows NT\Rpc  Value: ENABLEAUTHEPRESOLUTIONMachine\SOFTWARE\Policies\Microsoft\Windows NT\Rpc  Value: MAXNONPAGEDPOOLPERCONNECTIONMachine\SOFTWARE\Policies\Microsoft\Windows NT\Rpc  Value: ENABLETCPPORTSCALINGMACHINE\SOFTWARE\Microsoft\Rpc\Extensions  Value: NDROLEEXTDLLMachine\SOFTWARE\Microsoft\Rpc\Extensions  Value: REMOTERPCDLLMachine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows  Value: LOADAPPINIT_DLLSMachine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options  Value: DISABLELOCALOVERRIDEMachine\SOFTWARE\Microsoft\Windows NT\CurrentVersion  Value: CURRENTBUILDNUMBERMachine\SOFTWARE\Microsoft\Windows NT\CurrentVersion  Value: CURRENTBUILDNUMBERMachine\SYSTEM\CurrentControlSet\Services\crypt32  Value: DEBUGHEAPFLAGSMachine\SOFTWARE\Microsoft\Windows\CurrentVersion\Internet Settings  Value: DISABLEIMPROVEDZONECHECKMachine\SOFTWARE\Policies\Microsoft\Windows\CurrentVersion\Internet Settings  Value: SECURITY_HKLM_ONLYMachine\SOFTWARE\Microsoft\Windows\CurrentVersion  Value: PROGRAMFILESDIRKEYS TO BE CREATED
-MACHINE\SOFTWARE\Microsoft\Rpc\Extensions  Value: NdrOleExtDLL
-Machine\SOFTWARE\Microsoft\Rpc\Extensions  Value: RemoteRpcDll
+Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows  Value: LOADAPPINIT_DLLSKEYS TO BE CREATED
 Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows  Value: LoadAppInit_DLLs
+Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Custom\ee.exe
 
 
-The complete report is in: C:/Users/PredieriEd/Desktop/Shared_Mal_Folder/out/30/  with an increment of: 74.47870778267254%
+The complete report is in: C:/Users/PredieriEd/Desktop/Shared_Mal_Folder/out/6/  with an increment of: 5.820105820105823%
