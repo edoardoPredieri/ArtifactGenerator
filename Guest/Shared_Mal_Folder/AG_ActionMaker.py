@@ -46,7 +46,7 @@ def CreateElement():
         reg = line.split(";")[0]
         value = line.split(";")[1]
         
-        if value != "" and value != None:
+        if value != "" and value != None and value != "":
             l = reg.split("\\")
             key = "".join(str(elem)+"\\" for elem in l[1:len(l)])
             aReg = None

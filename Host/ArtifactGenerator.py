@@ -141,11 +141,11 @@ whitelistValue = [["Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows
 peakList = ["Getaddrinfo", "Socket", "Connect", "Send", "Sendto", "Recv", "Recvfrom", "CloseSocket", "InternetOpen", "InternetConnect", "HttpOpenRequest", "HttpSendRequest", "InternetReadFile", "WinHttpOpen", "WinHttpConnect", "WinHttpOpenRequest", "WinHttpSendRequest", "WinHttpWriteData", "WinHttpReceiveResponse", "WinHttpQueryData",
             "WinHttpReadData"]
 
-noExistFiles = ["C:\WINDOWS\SYSTEM32\SERVICES.EXE"]           #List of Files to be "delete" through BluePill
+noExistFiles = []           #List of Files to be "delete" through BluePill
 noExistKeys = []            #List of Keys to be "delete" through BluePill
 
 toCreateFiles = []
-toCreatekeys = {}
+toCreatekeys = []
 
 FileDatabase = {}           #File: [weight, isPresent, endAction, flag]
 KeyDatabase = {}            #Key:  [weight, valueKey[], isPresent[], endAction[], flag[]]
@@ -197,8 +197,8 @@ def writeBlackListKey():
 
 def writeToCreateKey():
     f = open(ToCreateKey_path,"w")
-    for i in toCreatekeys.keys():
-        f.write(i+";"+toCreatekeys[i]+'\n')
+    for i in toCreatekeys:
+        f.write(i+'\n')
     f.close()
 
 
@@ -352,15 +352,17 @@ def actionArtifact():
                     writeToCreateFile()
                     FileDatabase[importantFile][1] = 0
                     FileDatabase[importantFile][3] = True
-                noExistFiles.append((path+"ag.txt").upper())
+                    return importantFile, None
+                noExistFiles.append(path+"ag.txt")
                 writeBlackListFile()
              elif "*" in name:
                 if path+"ag"+name[1:len(name)] in toCreateFiles:
-                    toCreateFiles.remove((path+"ag"+name[1:len(name)]))
+                    toCreateFiles.remove(path+"ag"+name[1:len(name)])
                     writeToCreateFile()
                     FileDatabase[importantFile][1] = 0
                     FileDatabase[importantFile][3] = True
-                noExistFiles.append((path+"ag"+name[1:len(name)]).upper())
+                    return importantFile, None
+                noExistFiles.append(path+"ag"+name[1:len(name)])
                 writeBlackListFile()
              else:
                  if importantFile in toCreateFiles:
@@ -368,7 +370,8 @@ def actionArtifact():
                     writeToCreateFile()
                     FileDatabase[importantFile][1] = 0
                     FileDatabase[importantFile][3] = True
-                 noExistFiles.append(importantFile.upper())
+                    return importantFile, None
+                 noExistFiles.append(importantFile)
                  writeBlackListFile()
              FileDatabase[importantFile][1] = 0
         else:
@@ -378,27 +381,30 @@ def actionArtifact():
             name = l[len(l)-1]
             path = "".join(str(elem)+"\\\\" for elem in l[0:len(l)-1])
             if name == "*.*":
-                if (path+"ag.txt").upper() in noExistFiles:
-                    noExistFiles.remove((path+"ag.txt").upper())
+                if path+"ag.txt" in noExistFiles:
+                    noExistFiles.remove(path+"ag.txt")
                     writeBlackListFile()
                     FileDatabase[importantFile][1] = 1
                     FileDatabase[importantFile][3] = True
+                    return importantFile, None
                 toCreateFilesappend(path+"ag.txt")
                 writeToCreateFile()
             elif "*" in name:
-                if (path+"ag"+name[1:len(name)]).upper() in noExistFiles:
-                    noExistFiles.remove((path+"ag"+name[1:len(name)]).upper())
+                if path+"ag"+name[1:len(name)] in noExistFiles:
+                    noExistFiles.remove(path+"ag"+name[1:len(name)])
                     writeBlackListFile()
                     FileDatabase[importantFile][1] = 1
                     FileDatabase[importantFile][3] = True
+                    return importantFile, None
                 toCreateFiles.append(path+"ag"+name[1:len(name)])
                 writeToCreateFile()
             else:
-                if importantFile.upper() in noExistFiles:
-                    noExistFiles.remove(importantFile.upper())
+                if importantFile in noExistFiles:
+                    noExistFiles.remove(importantFile)
                     writeBlackListFile()
                     FileDatabase[importantFile][1] = 1
                     FileDatabase[importantFile][3] = True
+                    return importantFile, None
                 toCreateFiles.append(importantFile)
                 writeToCreateFile()
             FileDatabase[importantFile][1] = 1
@@ -410,23 +416,25 @@ def actionArtifact():
             if KeyDatabase[importantKey][2][0] == 1:
                 last = 3
                 print("Deleting: "+importantKey+"...")
-                if importantKey in toCreatekeys.keys():
-                    del toCreatekeys[importantKey]
+                if importantKey+";" in toCreatekeys:
+                    toCreatekeys.remove(importantKey+";")
                     writeToCreateKey()
                     KeyDatabase[importantKey][2][0] = 0
                     KeyDatabase[importantKey][4][0] = True
-                noExistKeys.append(importantKey.upper()+";")
+                    return importantKey, None
+                noExistKeys.append(importantKey+";")
                 writeBlackListKey()
                 KeyDatabase[importantKey][2][0] = 0
             else:
-                last = [importantKey]
+                last = 4
                 print("Creating: "+importantKey+"...")
-                if importantKey.upper()+";" in noExistKeys:
-                    noExistKeys.remove(importantKey.upper()+";")
+                if importantKey+";" in noExistKeys:
+                    noExistKeys.remove(importantKey+";")
                     writeBlackListKey()
                     KeyDatabase[importantKey][2][0] = 1
                     KeyDatabase[importantKey][4][0] = True
-                toCreatekeys[importantKey] = ""
+                    return importantKey, None
+                toCreatekeys.append(importantKey+";")
                 writeToCreateKey()
                 KeyDatabase[importantKey][2][0] = 1
             KeyDatabase[importantKey][4][0] = True
@@ -437,23 +445,25 @@ def actionArtifact():
             if KeyDatabase[importantKey][2][pos] == 1:
                 last = 3
                 print("Deleting: "+importantKey+"  "+importantValue+"...")
-                if importantKey in toCreatekeys.keys() and toCreatekeys[importantKey] == importantValue:
-                    del toCreatekeys[importantKey]
+                if importantKey+";"+importantValue in toCreatekeys:
+                    toCreatekeys.remove(importantKey+";"+importantValue)
                     writeToCreateKey()
                     KeyDatabase[importantKey][2][pos] = 0
                     KeyDatabase[importantKey][4][pos] = True
-                noExistKeys.append(importantKey+";"+importantValue.upper())
+                    return importantKey, importantValue
+                noExistKeys.append(importantKey+";"+importantValue)
                 writeBlackListKey()
                 KeyDatabase[importantKey][2][pos] = 0
             else:
                 last = 4
                 print("Creating: "+importantKey+"  "+importantValue+"...")
-                if "A;"+importantValue.upper() in noExistKeys:
-                    noExistKeys.remove(importantKey+";"+importantValue.upper())
+                if importantKey+";"+importantValue in noExistKeys:
+                    noExistKeys.remove(importantKey+";"+importantValue)
                     writeBlackListKey()
                     KeyDatabase[importantKey][2][pos] = 1
-                    KeyDatabase[importantKey][4][pos] = True 
-                toCreatekeys[importantKey] = importantValue
+                    KeyDatabase[importantKey][4][pos] = True
+                    return importantKey, importantValue
+                toCreatekeys.append(importantKey+";"+importantValue)
                 writeToCreateKey()
                 KeyDatabase[importantKey][2][pos] = 1
             KeyDatabase[importantKey][4][pos] = True
@@ -470,25 +480,14 @@ def restoreArtifact(LastTouchedElem, LastTouchedValue):
             path = "".join(str(elem)+"\\\\" for elem in l[0:len(l)-1])
             if name == "*.*":
                 if (path+"ag.txt") in toCreateFiles:
-                    toCreateFiles.remove((path+"ag"+name[1:len(name)]))
-                    writeToCreateFile()
-                if last == 2 or last == 4:
-                    noExistFiles.append((path+"ag.txt").upper())
-                    writeBlackListFile()
+                    toCreateFiles.remove(path+"ag"+name[1:len(name)])
             elif "*" in name:
                if path+"ag"+name[1:len(name)] in toCreateFiles:
                    toCreateFiles.remove((path+"ag"+name[1:len(name)]))
-                   writeToCreateFile()
-               if last == 2 or last == 4:
-                   noExistFiles.append((path+"ag"+name[1:len(name)]).upper())
-                   writeBlackListFile()
             else:
                 if LastTouchedElem in toCreateFiles:
                    toCreateFiles.remove(LastTouchedElem)
-                   writeToCreateFile()
-                if last == 2 or last == 4:
-                    noExistFiles.append(LastTouchedElem.upper())
-                    writeBlackListFile()
+            writeToCreateFile()
             FileDatabase[LastTouchedElem][1] = 0
             FileDatabase[LastTouchedElem][3] = True
         else:
@@ -498,8 +497,8 @@ def restoreArtifact(LastTouchedElem, LastTouchedValue):
             name = l[len(l)-1]
             path = "".join(str(elem)+"\\\\" for elem in l[0:len(l)-1])
             if name == "*.*":
-                if (path+"ag.txt").upper() in noExistFiles:
-                    noExistFiles.remove((path+"ag.txt").upper())
+                if path+"ag.txt" in noExistFiles:
+                    noExistFiles.remove(path+"ag.txt")
                     writeBlackListFile()
                     FileDatabase[LastTouchedElem][1] = 1
                     FileDatabase[LastTouchedElem][3] = True
@@ -507,8 +506,8 @@ def restoreArtifact(LastTouchedElem, LastTouchedValue):
                 toCreateFiles.append(path+"ag.txt")
                 writeToCreateFile()
             elif "*" in name:
-                if (path+"ag"+name[1:len(name)]).upper() in noExistFiles:
-                    noExistFiles.remove((path+"ag"+name[1:len(name)]).upper())
+                if (path+"ag"+name[1:len(name)]) in noExistFiles:
+                    noExistFiles.remove(path+"ag"+name[1:len(name)])
                     writeBlackListFile()
                     FileDatabase[LastTouchedElem][1] = 1
                     FileDatabase[LastTouchedElem][3] = True
@@ -516,8 +515,8 @@ def restoreArtifact(LastTouchedElem, LastTouchedValue):
                 toCreateFiles.append(path+"ag"+name[1:len(name)])
                 writeToCreateFile()
             else:
-                if LastTouchedElem.upper() in noExistFiles:
-                    noExistFiles.remove(LastTouchedElem.upper())
+                if LastTouchedElem in noExistFiles:
+                    noExistFiles.remove(LastTouchedElem)
                     writeBlackListFile()
                     FileDatabase[LastTouchedElem][1] = 1
                     FileDatabase[LastTouchedElem][3] = True
@@ -531,111 +530,61 @@ def restoreArtifact(LastTouchedElem, LastTouchedValue):
         if len(KeyDatabase[LastTouchedElem][1]) == 0 or LastTouchedValue == None:
             if KeyDatabase[LastTouchedElem][2][0] == 1:
                 print("Deleting: "+LastTouchedElem+"...")
-                if LastTouchedElem in toCreatekeys.keys():
-                    del toCreatekeys[LastTouchedElem]
+                if LastTouchedElem+";" in toCreatekeys:
+                    toCreatekeys.remove(LastTouchedElem+";")
                     writeToCreateKey()
-                if last == 2 or last == 4:
-                    noExistKeys.append(LastTouchedElem.upper()+";")
-                    writeBlackListKey()
                 KeyDatabase[LastTouchedElem][2][0] = 0
                 KeyDatabase[LastTouchedElem][4][0] = True
+                return
             else:
                 last = 4
                 print("Creating: "+LastTouchedElem+"...")
-                if LastTouchedElem.upper()+";" in noExistKeys:
-                    noExistKeys.remove(LastTouchedElem.upper()+";")
+                if LastTouchedElem+";" in noExistKeys:
+                    noExistKeys.remove(LastTouchedElem+";")
                     writeBlackListKey()
                     KeyDatabase[LastTouchedElem][2][0] = 1
                     KeyDatabase[LastTouchedElem][4][0] = True
                     return
-                toCreatekeys[LastTouchedElem] = ""
+                toCreatekeys.append(LastTouchedElem+";")
                 writeToCreateKey()
                 KeyDatabase[LastTouchedElem][2][0] = 1
                 KeyDatabase[LastTouchedElem][4][0] = True
-
+                return
         else:
             pos = (KeyDatabase[LastTouchedElem][1]).index(LastTouchedValue) + 1
             if KeyDatabase[LastTouchedElem][2][pos] == 1:
                 print("Deleting: "+LastTouchedElem+"  "+LastTouchedValue+"...")
-                if LastTouchedElem in toCreatekeys.keys() and toCreatekeys[LastTouchedElem] == LastTouchedValue:
-                    del toCreatekeys[LastTouchedElem]
+                if LastTouchedElem+";"+LastTouchedValue in toCreatekeys:
+                    toCreatekeys.remove(LastTouchedElem+";"+LastTouchedValue)
                     writeToCreateKey()
-                if last == 2 or last == 4:
-                    noExistKeys.append(LastTouchedElem+";"+LastTouchedValue.upper())
-                    writeBlackListKey()
                 KeyDatabase[LastTouchedElem][2][pos] = 0
                 KeyDatabase[LastTouchedElem][4][pos] = True
             else:
                 last = 4
                 print("Creating: "+LastTouchedElem+"  "+LastTouchedValue+"...")
-                if "A;"+LastTouchedElem.upper() in noExistKeys:
-                    noExistKeys.remove(LastTouchedElem+";"+LastTouchedValue.upper())
+                if LastTouchedElem+";"+LastTouchedValue in noExistKeys:
+                    noExistKeys.remove(LastTouchedElem+";"+LastTouchedValue)
                     writeBlackListKey()
                     KeyDatabase[LastTouchedElem][2][pos] = 1
                     KeyDatabase[LastTouchedElem][4][pos] = True
                     return
-                toCreatekeys[LastTouchedElem] = LastTouchedValue
+                toCreatekeys.append(LastTouchedElem+";"+LastTouchedValue)
                 writeToCreateKey()
                 KeyDatabase[LastTouchedElem][2][pos] = 1
                 KeyDatabase[LastTouchedElem][4][pos] = True
+
             
-
-
-def validationElem(elem, value, mode): 
-    if elem in FileDatabase.keys():
-        if mode == 0:                                       #Better Case
-            if FileDatabase[elem][1] == 1:
-                FileDatabase[elem][2] = "To be Created"
-            else:
-                FileDatabase[elem][2] = "To be Deleted"
-        elif mode == 1:                                     #Equal Case
-            FileDatabase[elem][2] = "No modification"
-        else:                                               #Worse Case
-            if FileDatabase[elem][1] == 0:
-                FileDatabase[elem][2] = "To be Created"
-            else:
-                FileDatabase[elem][2] = "To be Deleted"
-    elif elem in KeyDatabase.keys():
-        if value:
-            pos = (KeyDatabase[elem][1]).index(value) + 1
-            if mode == 0:                                       #Better Case
-                if KeyDatabase[elem][2][pos] == 1:
-                    KeyDatabase[elem][3][pos] = "To be Created"
-                else:
-                    KeyDatabase[elem][3][pos] = ("To be Deleted")
-            elif mode == 1:                                     #Equal Case
-                KeyDatabase[elem][3][pos] = ("No modification")
-            else:                                               #Worse Case
-                if KeyDatabase[elem][2][pos] == 0:
-                    KeyDatabase[elem][3][pos] = ("To be Created")
-                else:
-                    KeyDatabase[elem][3][pos] = ("To be Deleted")
-        else:
-            if mode == 0:                                       #Better Case
-                if KeyDatabase[elem][2][0] == 1:
-                    KeyDatabase[elem][3][0] = "To be Created"
-                else:
-                    KeyDatabase[elem][3][0] = "To be Deleted"
-            elif mode == 1:                                     #Equal Case
-                KeyDatabase[elem][3][0] = "No modification"
-            else:                                               #Worse Case
-                if KeyDatabase[elem][2][0] == 0:
-                    KeyDatabase[elem][3][0] = "To be Created"
-                else:
-                    KeyDatabase[elem][3][0] = "To be Deleted"
-
-
 def exitCase():
     for file in FileDatabase.keys():
-        if FileDatabase[file][2] == None:
+        if FileDatabase[file][3] != True:
             return False
     for key in KeyDatabase.keys():
         if len(KeyDatabase[key][1]) > 0:
             for j in range(len(KeyDatabase[key][1])):
-                if KeyDatabase[key][3][j+1] == "":
+                if KeyDatabase[key][4][j+1] != True:
                     return False
         else:
-            if KeyDatabase[key][3][0] == "":
+            if KeyDatabase[key][4][0] != True:
                     return False
     return True
 
@@ -819,8 +768,6 @@ LastTouchedValue = ""                                                           
 print("ArtifactGenerator")
 print("")
 
-writeBlackListFile()
-
 os.system('VBoxManage snapshot Malware_Evasion take "AG_Snap" --description "AG_Snap"')
 os.system('VBoxManage startvm "Malware_Evasion" --type headless')
 os.system('VBoxManage guestproperty wait "Malware_Evasion" "/VirtualBox/GuestInfo/OS/LoggedInUsers"')    
@@ -832,7 +779,10 @@ while(True):
     f.close()
     
     os.system('VBoxManage --nologo guestcontrol "Malware_Evasion" run --exe "Z://Run_AG.bat" --username Edo --password edoardo1 --wait-stdout ')
-           
+    os.system('VBoxManage controlvm "Malware_Evasion" savestate')
+    os.system('VBoxManage snapshot Malware_Evasion restore "AG_SnapL"')
+    os.system('VBoxManage startvm "Malware_Evasion" --type headless')
+
     actualEvasionPath = BluePill_evasion_path + str(iteration) + "/"                                            #Path of current evasion.log
 
     while (True):
@@ -963,11 +913,11 @@ while(True):
     IterationDatabase[iteration] = [iterationWeight, noExistFiles.copy(), noExistKeys.copy(), toCreateFiles.copy(), toCreatekeys.copy()]
     if findPeak(int(iterationWeight)):
         break
+
+    
     
     if iteration == 0 or IterationDatabase[iteration][0] + add_value > IterationDatabase[iteration-1][0]:
         print(str(iteration+1)+": BETTER THAN PREVIOUS ITERATION "+str(iterationWeight))
-        if iteration > 0:
-            validationElem(LastTouchedElement, LastTouchedValue, 0)
         if iteration > 0 and exitCase() or iteration > 150:
             break
         LastTouchedElement, LastTouchedValue = actionArtifact()
@@ -977,7 +927,6 @@ while(True):
         print(str(iteration+1)+": EQUAL TO PREVIOUS ITERATION "+str(iterationWeight))
         p = LastTouchedElement
         restoreArtifact(LastTouchedElement, LastTouchedValue)
-        validationElem(LastTouchedElement, LastTouchedValue, 1)
         if iteration > 0 and exitCase() or iteration > 150:
             break
         LastTouchedElement, LastTouchedValue = actionArtifact()
@@ -985,12 +934,10 @@ while(True):
             break
     else:
         print(str(iteration+1)+": WORSE THAN PREVIOUS ITERATION "+str(iterationWeight))
-        validationElem(LastTouchedElement, LastTouchedValue, 2)
         if iteration > 0 and exitCase() or iteration > 150:
             break
         restoreArtifact(LastTouchedElement, LastTouchedValue)
 
-    os.system('VBoxManage snapshot Malware_Evasion restore AG_SnapL')
     iteration += 1
 
 try:
@@ -1033,13 +980,13 @@ try:
     print("")
     print("KEYS TO BE CREATED")
     f.write("KEYS TO BE CREATED\n")
-    for i in IterationDatabase[bestIt][4].keys():
-        if len(IterationDatabase[bestIt][4][i])>0:
-            print (i+"  Value: "+IterationDatabase[bestIt][4][i])
-            f.write(i+"  Value: "+IterationDatabase[bestIt][4][i]+"\n")
+    for i in IterationDatabase[bestIt][4]:
+        if i.split(";")[1] != "":
+            print (i.split(";")[0]+"  Value: "+i.split(";")[1])
+            f.write(i.split(";")[0]+"  Value: "+i.split(";")[1])
         else:
-            print (i)
-            f.write(i+"\n")
+            print(i.split(";")[0])
+            f.write(i.split(";")[0]+"\n")
     print("")
     f.write("\n")
     print("")

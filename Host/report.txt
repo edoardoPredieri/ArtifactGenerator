@@ -1,14 +1,11 @@
 ArtifactGenerator
 
 FILES TO BE DELETED
-C:\WINDOWS\SYSTEM32\SERVICES.EXE
-C:\WINDOWS\SYSTEM32\.HLP
 FILES TO BE CREATED
-C:\Windows\Help\.HLP
 KEYS TO BE DELETED
-Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows  Value: LOADAPPINIT_DLLSKEYS TO BE CREATED
-Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows  Value: LoadAppInit_DLLs
-Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Custom\ee.exe
+KEYS TO BE CREATED
+Machine\SOFTWARE\Policies\Microsoft\Windows NT\Rpc
+Machine\SOFTWARE\Policies\Microsoft\Windows NT\Rpc  Value: StateInformationMachine\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{f76f85ec-c350-441b-a77f-938d5ae7d50a}
+Machine\SOFTWARE\Policies\Microsoft\Windows NT\Rpc  Value: BadProxyExpiresTime
 
-
-The complete report is in: C:/Users/PredieriEd/Desktop/Shared_Mal_Folder/out/6/  with an increment of: 5.820105820105823%
+The complete report is in: C:/Users/PredieriEd/Desktop/Shared_Mal_Folder/out/35/  with an increment of: 63.25581395348837%
