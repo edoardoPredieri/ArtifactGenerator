@@ -27,7 +27,7 @@ FileCommandList = {"CreateFile" : 1, "CreateFileA" : 1, "CreateFileW" : 1,
                    "OpenFile" : 2,
                    "PathFileExists" : 5, "PathFileExistsA" : 5, "PathFileExistsW" : 5,
                    "FindFirstFile" : 4, "FindFirstFileA" : 4, "FindFirstFileW" : 4, "FindFirstFileEx" : 4, "FindFirstFileExA" : 4, "FindFirstFileExW" : 4,
-                   "NtCreateFile" : 3,
+                   "NtCreateFile" : 3, "NtQueryAttributesFile" : 3,
                    "GetModuleFileName" : 2, "GetModuleFileNameA" :2 , "GetModuleFileNameW" :2}
 
 #Weighted list of file open modalities
@@ -110,7 +110,7 @@ GeneralCommandList = {"IsDebuggerPresent" : 5, "CheckRemoteDebuggerPresent" : 5,
 #List of Files to not modificate
 whitelistFile = ["SVCHOST.EXE", "ACLAYERS.DLL", "CMD.EXE", "SORTDEFAULT.NLS", "DESKTOP.INI", "EE.EXE", "APPDATA", "MOUNTPOINTMANAGER", "EN", "STATICCACHE.DAT", "OLEACCRC.DLL", "ACXTRNAL.DLL", "MSVFW32.DLL.MUI", "AVICAP32.DLL.MUI",
                  "KERNELBASE.DLL.MUI", "MSCTF.DLL.MUI", "WERFAULT.EXE.MUI", "FAULTREP.DLL.MUI", "DWM.EXE", "EXPLORER.EXE", "WMIPRVSE.EXE", "PIN.EXE", "RSAENH.DLL", "SXBOY.EXE",
-                 "OSSPROXY.PDB", "SERVICES.EXE"]
+                 "OSSPROXY.PDB", "SERVICES.EXE", "SUP.DLL", "D3D8THK.DLL"]
 
 #List of Keys to not modificate
 whitelistKey = ["MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Session Manager", "Machine\\SYSTEM\\CurrentControlSet\\Control\\Session Manager", "\\REGISTRY\\MACHINE", "Machine\\SOFTWARE\\Policies\\Microsoft\\Windows\\Safer\\CodeIdentifiers",
@@ -123,7 +123,7 @@ whitelistKey = ["MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Session Manager", 
                 "Machine\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\Run", "USER\\S-1-5-21-3859524018-1065375656-672923527-1001_CLASSES", "Machine\\SOFTWARE\\Classes\\http\\shell\\open\\command", "MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\AppCertDlls",
                 "MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\AppCompatibility", "USER\\S-1-5-21-3859524018-1065375656-672923527-1001\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders", "USER\\S-1-5-21-3859524018-1065375656-672923527-1001\\Software\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Layers",
                 "Machine\\SOFTWARE\\Policies\\Microsoft\\MUI\\Settings", "Machine\\SOFTWARE\\Policies\\Microsoft\\Control Panel\\Desktop", "USER\\S-1-5-21-3859524018-1065375656-672923527-1001\\Software\\Microsoft\\Windows NT\\CurrentVersion", "Machine\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\LanguagePack\\DataStore_V1.0",
-                "Machine\\SYSTEM\\CurrentControlSet\\Services\\WinSock2\\Parameters", "Machine\\SYSTEM\\CurrentControlSet\\control\\NetworkProvider\\HwOrder", "Machine\\SYSTEM\\CurrentControlSet\\Services\\Winsock2\\Parameters", "Machine\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Custom\\uninstal.bat",
+                "Machine\\SYSTEM\\CurrentControlSet\\control\\NetworkProvider\\HwOrder", "Machine\\SYSTEM\\CurrentControlSet\\Services\\Winsock2\\Parameters", "Machine\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Custom\\uninstal.bat",
                 "Machine\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Layers", "Machine\\SYSTEM\\CurrentControlSet\\Control\\SQMServiceList", "Machine\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\WinOldApp",
                 "Machine\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\WOW\\boot", "Machine\\SOFTWARE\\Microsoft\\SQMClient\\Windows", "Machine\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags", "Machine\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\GRE_Initialize",
                 "Machine\\SYSTEM\\CurrentControlSet\\Control\\Nls\\CustomLocale", "Machine\\SOFTWARE\\Microsoft\\CTF\\KnownClasses", "Machine\\SOFTWARE\\Microsoft\\CTF\\DirectSwitchHotkeys", "Machine\\SOFTWARE\\Policies\\Microsoft\\SQMClient\\Windows", "Machine\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer",
@@ -700,7 +700,7 @@ def controlKey2(targetKey):
     
 
 def controlFile(targetFile):
-    return not inDatabaseFile(targetFile) and len(targetFile) > 3 and "C:" in targetFile and not inWhiteListFile(targetFile) and targetFile[len(targetFile)-1] != "\\"
+    return not inDatabaseFile(targetFile) and len(targetFile) > 2 and "C:" in targetFile and not inWhiteListFile(targetFile) and targetFile[len(targetFile)-1] != "\\"
 
 
 def controlValue(targetKey, targetValue):

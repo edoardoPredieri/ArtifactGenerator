@@ -3,9 +3,8 @@ ArtifactGenerator
 FILES TO BE DELETED
 FILES TO BE CREATED
 KEYS TO BE DELETED
-KEYS TO BE CREATED
-Machine\SOFTWARE\Policies\Microsoft\Windows NT\Rpc
-Machine\SOFTWARE\Policies\Microsoft\Windows NT\Rpc  Value: StateInformationMachine\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{f76f85ec-c350-441b-a77f-938d5ae7d50a}
-Machine\SOFTWARE\Policies\Microsoft\Windows NT\Rpc  Value: BadProxyExpiresTime
+Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows  Value: LoadAppInit_DLLsKEYS TO BE CREATED
+Machine\SOFTWARE\Microsoft\Rpc  Value: MaxRpcSizeMachine\SOFTWARE\Policies\Microsoft\Windows NT\Rpc
+Machine\SOFTWARE\Policies\Microsoft\Windows NT\Rpc  Value: StateInformationMachine\SOFTWARE\Policies\Microsoft\Windows NT\Rpc  Value: EnableAuthEpResolutionMachine\SOFTWARE\Policies\Microsoft\Windows NT\Rpc  Value: MaxNonPagedPoolPerConnection
 
-The complete report is in: C:/Users/PredieriEd/Desktop/Shared_Mal_Folder/out/35/  with an increment of: 63.25581395348837%
+The complete report is in: C:/Users/PredieriEd/Desktop/Shared_Mal_Folder/out/13/  with an increment of: 25.694444444444443%
