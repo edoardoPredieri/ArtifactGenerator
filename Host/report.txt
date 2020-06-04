@@ -3,8 +3,9 @@ ArtifactGenerator
 FILES TO BE DELETED
 FILES TO BE CREATED
 KEYS TO BE DELETED
-Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows  Value: LoadAppInit_DLLsKEYS TO BE CREATED
+Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList\S-1-5-21-3859524018-1065375656-672923527-1001  Value: ProfileImagePathMachine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList  Value: ProgramDataKEYS TO BE CREATED
 Machine\SOFTWARE\Microsoft\Rpc  Value: MaxRpcSizeMachine\SOFTWARE\Policies\Microsoft\Windows NT\Rpc
-Machine\SOFTWARE\Policies\Microsoft\Windows NT\Rpc  Value: StateInformationMachine\SOFTWARE\Policies\Microsoft\Windows NT\Rpc  Value: EnableAuthEpResolutionMachine\SOFTWARE\Policies\Microsoft\Windows NT\Rpc  Value: MaxNonPagedPoolPerConnection
+Machine\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{f76f85ec-c350-441b-a77f-938d5ae7d50a}
+Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList\S-1-5-21-3859524018-1065375656-672923527-1001  Value: EnableFileTracing
 
-The complete report is in: C:/Users/PredieriEd/Desktop/Shared_Mal_Folder/out/13/  with an increment of: 25.694444444444443%
+The complete report is in: C:/Users/PredieriEd/Desktop/Shared_Mal_Folder/out/46/  with an increment of: 59.563182527301095%

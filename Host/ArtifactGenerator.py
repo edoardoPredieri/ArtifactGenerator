@@ -110,7 +110,8 @@ GeneralCommandList = {"IsDebuggerPresent" : 5, "CheckRemoteDebuggerPresent" : 5,
 #List of Files to not modificate
 whitelistFile = ["SVCHOST.EXE", "ACLAYERS.DLL", "CMD.EXE", "SORTDEFAULT.NLS", "DESKTOP.INI", "EE.EXE", "APPDATA", "MOUNTPOINTMANAGER", "EN", "STATICCACHE.DAT", "OLEACCRC.DLL", "ACXTRNAL.DLL", "MSVFW32.DLL.MUI", "AVICAP32.DLL.MUI",
                  "KERNELBASE.DLL.MUI", "MSCTF.DLL.MUI", "WERFAULT.EXE.MUI", "FAULTREP.DLL.MUI", "DWM.EXE", "EXPLORER.EXE", "WMIPRVSE.EXE", "PIN.EXE", "RSAENH.DLL", "SXBOY.EXE",
-                 "OSSPROXY.PDB", "SERVICES.EXE", "SUP.DLL", "D3D8THK.DLL"]
+                 "OSSPROXY.PDB", "SERVICES.EXE", "SUP.DLL", "D3D8THK.DLL", "VERSION.DLL", "MSIMG32.DLL", "WINNSI.DLL", "DHCPCSVC.DLL", "PROFAPI.DLL", "D3D9.DLL", "DWMAPI.DLL", "RASAPI32.DLL",
+                 "FAULTREP.DLL", "RTUTILS.DLL", "MFC42U.DLL", "ODBC32.DLL"]
 
 #List of Keys to not modificate
 whitelistKey = ["MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Session Manager", "Machine\\SYSTEM\\CurrentControlSet\\Control\\Session Manager", "\\REGISTRY\\MACHINE", "Machine\\SOFTWARE\\Policies\\Microsoft\\Windows\\Safer\\CodeIdentifiers",
@@ -139,7 +140,7 @@ whitelistValue = [["Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows
 
 
 peakList = ["Getaddrinfo", "Socket", "Connect", "Send", "Sendto", "Recv", "Recvfrom", "CloseSocket", "InternetOpen", "InternetConnect", "HttpOpenRequest", "HttpSendRequest", "InternetReadFile", "WinHttpOpen", "WinHttpConnect", "WinHttpOpenRequest", "WinHttpSendRequest", "WinHttpWriteData", "WinHttpReceiveResponse", "WinHttpQueryData",
-            "WinHttpReadData"]
+            "WinHttpReadData", "WSASocket", "WSAIoctl", "ioctlsocket", "InternetOpenUrlA", "HttpAddRequestHeadersA", "UrlDownloadToFile"] #GetKeyState, ShellExecute, WinExec
 
 noExistFiles = []           #List of Files to be "delete" through BluePill
 noExistKeys = []            #List of Keys to be "delete" through BluePill
@@ -700,7 +701,8 @@ def controlKey2(targetKey):
     
 
 def controlFile(targetFile):
-    return not inDatabaseFile(targetFile) and len(targetFile) > 2 and "C:" in targetFile and not inWhiteListFile(targetFile) and targetFile[len(targetFile)-1] != "\\"
+    l =  (clearPath(targetFile)).split("\\")
+    return not inDatabaseFile(targetFile) and len(l) > 3 and "C:" in targetFile and not inWhiteListFile(targetFile) and targetFile[len(targetFile)-1] != "\\"
 
 
 def controlValue(targetKey, targetValue):
@@ -916,25 +918,25 @@ while(True):
 
     
     
-    if iteration == 0 or IterationDatabase[iteration][0] + add_value > IterationDatabase[iteration-1][0]:
+    if iteration == 0 or IterationDatabase[iteration][0] + 0*add_value > IterationDatabase[iteration-1][0]:
         print(str(iteration+1)+": BETTER THAN PREVIOUS ITERATION "+str(iterationWeight))
-        if iteration > 0 and exitCase() or iteration > 150:
+        if iteration > 0 and exitCase() or iteration > 149:
             break
         LastTouchedElement, LastTouchedValue = actionArtifact()
         if LastTouchedElement == None and LastTouchedValue == None:
             break
-    elif IterationDatabase[iteration][0] + add_value == IterationDatabase[iteration-1][0]:
+    elif IterationDatabase[iteration][0] + 0*add_value == IterationDatabase[iteration-1][0]:
         print(str(iteration+1)+": EQUAL TO PREVIOUS ITERATION "+str(iterationWeight))
         p = LastTouchedElement
         restoreArtifact(LastTouchedElement, LastTouchedValue)
-        if iteration > 0 and exitCase() or iteration > 150:
+        if iteration > 0 and exitCase() or iteration > 149:
             break
         LastTouchedElement, LastTouchedValue = actionArtifact()
         if LastTouchedElement == None and LastTouchedValue == None:
             break
     else:
         print(str(iteration+1)+": WORSE THAN PREVIOUS ITERATION "+str(iterationWeight))
-        if iteration > 0 and exitCase() or iteration > 150:
+        if iteration > 0 and exitCase() or iteration > 149:
             break
         restoreArtifact(LastTouchedElement, LastTouchedValue)
 

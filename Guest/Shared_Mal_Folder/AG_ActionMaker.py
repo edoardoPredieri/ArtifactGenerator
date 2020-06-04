@@ -95,11 +95,11 @@ def ExecuteBluePill():
     iteration = f.readline().strip()
     f.close()
     
-    os.system("C: & cd C:/Pin311 & echo F | xcopy ee.exe eeC.exe /y")
+    #os.system("C: & cd C:/Pin311 & echo F | xcopy ee.exe eeC.exe /y")
     os.system("C: & cd C:/Pin311 & pin -follow_execv -t bluepill32 -evasions -iter "+str(iteration)+" -- ee.exe")    #BluePill Execution Command
-    if not findFile("C:\\Pin311\\ee.exe"):
-        print("Auto-Eliminate Malware   iteration = "+str(iteration))
-        os.system("C: & cd C:/Pin311 & rename eeC.exe ee.exe")
+    #if not findFile("C:\\Pin311\\ee.exe"):
+     #   print("Auto-Eliminate Malware   iteration = "+str(iteration))
+      #  os.system("C: & cd C:/Pin311 & rename eeC.exe ee.exe")
 
 
 
