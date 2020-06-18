@@ -1,25 +1,28 @@
 import os
 import time
 import random
+import threading
 from winreg import *
+from tkinter import *
 from matplotlib import pyplot as plt
 
 
-BluePill_evasion_path = "C:/Users/PredieriEd/Desktop/Shared_Mal_Folder/out/"             #Path of evasion.log files
-BluePill_blackListFile_path = "C:/Users/PredieriEd/Desktop/Shared_Mal_Folder/in/blacklistFile.txt" #Path to blacklist file
-BluePill_blackListKey_path = "C:/Users/PredieriEd/Desktop/Shared_Mal_Folder/in/blacklistKey.txt"   #Path to blacklist key
 
-ToCreateFile_path = "C:/Users/PredieriEd/Desktop/Shared_Mal_Folder/in/toCreateFile.txt" #Path to 
-ToCreateKey_path = "C:/Users/PredieriEd/Desktop/Shared_Mal_Folder/in/toCreateKey.txt"   #Path to
-Iteration_path = "C:/Users/PredieriEd/Desktop/Shared_Mal_Folder/in/iteration.txt"
+BluePill_evasion_path = "C:/Users/PredieriEd/Desktop/Shared_Mal_Folder/out/"                        #Path of evasion.log files
+BluePill_blackListFile_path = "C:/Users/PredieriEd/Desktop/Shared_Mal_Folder/in/blacklistFile.txt"  #Path to blacklist file
+BluePill_blackListKey_path = "C:/Users/PredieriEd/Desktop/Shared_Mal_Folder/in/blacklistKey.txt"    #Path to blacklist key
 
-findFile_path = "C:/Users/PredieriEd/Desktop/Shared_Mal_Folder/find/toSearchFile.txt"
-responseFile_path = "C:/Users/PredieriEd/Desktop/Shared_Mal_Folder/find/responseFile.txt"
-findKey_path = "C:/Users/PredieriEd/Desktop/Shared_Mal_Folder/find/toSearchKey.txt"
-responseKey_path = "C:/Users/PredieriEd/Desktop/Shared_Mal_Folder/find/responseKey.txt"
+ToCreateFile_path = "C:/Users/PredieriEd/Desktop/Shared_Mal_Folder/in/toCreateFile.txt"             #Path to toCreateFile file
+ToCreateKey_path = "C:/Users/PredieriEd/Desktop/Shared_Mal_Folder/in/toCreateKey.txt"               #Path to toCreateKey file
+Iteration_path = "C:/Users/PredieriEd/Desktop/Shared_Mal_Folder/in/iteration.txt"                   #Path to Iteration file
 
-path_list = [BluePill_blackListFile_path, BluePill_blackListKey_path, ToCreateFile_path, ToCreateKey_path, Iteration_path, findFile_path, responseFile_path,
-             findKey_path, responseKey_path]
+findFile_path = "C:/Users/PredieriEd/Desktop/Shared_Mal_Folder/find/toSearchFile.txt"               #Path to findFile file
+responseFile_path = "C:/Users/PredieriEd/Desktop/Shared_Mal_Folder/find/responseFile.txt"           #Path to findFile response file
+findKey_path = "C:/Users/PredieriEd/Desktop/Shared_Mal_Folder/find/toSearchKey.txt"                 #Path to findKey file
+responseKey_path = "C:/Users/PredieriEd/Desktop/Shared_Mal_Folder/find/responseKey.txt"             #Path to findKey response file
+
+#List of file's paths
+path_list = [BluePill_blackListFile_path, BluePill_blackListKey_path, ToCreateFile_path, ToCreateKey_path, Iteration_path, findFile_path, responseFile_path, findKey_path, responseKey_path]
 
 #Weighted list of file manipulation commands
 FileCommandList = {"CreateFile" : 1, "CreateFileA" : 1, "CreateFileW" : 1,
@@ -32,26 +35,16 @@ FileCommandList = {"CreateFile" : 1, "CreateFileA" : 1, "CreateFileW" : 1,
 
 #Weighted list of file open modalities
 ModeList = {"Create" : 1, "Replace/Create" : 1, "Overwrite/Create" :1,
-            "Delete" : 1,
-            "Exist" : 5,
-            "Read" : 4, "Read/Write" : 4,
-            "Open" :4 , "Open/Create" : 4,
-            "Write" : 4, "Overwrite" : 4,
-            "Search" : 5,
-            "Unknow" : 2}
+            "Delete" : 1, "Exist" : 5, "Read" : 4, "Read/Write" : 4,
+            "Open" :4 , "Open/Create" : 4, "Write" : 4, "Overwrite" : 4,
+            "Search" : 5, "Unknow" : 2}
 
 #Weighted list of file names
 FileNameList = {"VIRTUALBOX" : 5, "VBOX" : 5, "ORACLE" : 5, "GUEST" : 4, "PHYSICALDRIVE" : 4, "VM" : 4,
-		"VMMOUSE" : 5, "HGFS" : 5, "VMHGFS" : 5, "VMCI" : 5, "VMWARE" : 5, "VBOXMOUSE" : 5, "VBOXGUEST" : 5, "VBOXSF" : 5, "VBOXVIDEO" :5,
-                "LOADDLL" : 3,
-                "EMAIL" : 2,
-                "SANDBOX" : 5,
-                "SAMPLE" : 3,
-                "VIRUS" : 5,
-                "FOOBAR" : 3,
+                "VMMOUSE" : 5, "HGFS" : 5, "VMHGFS" : 5, "VMCI" : 5, "VMWARE" : 5, "VBOXMOUSE" : 5, "VBOXGUEST" : 5, "VBOXSF" : 5, "VBOXVIDEO" :5,
+                "LOADDLL" : 3, "EMAIL" : 2,"SANDBOX" : 5, "SAMPLE" : 3, "VIRUS" : 5, "FOOBAR" : 3,
                 "DRIVERS\\PRLETH" : 4, "DRIVERS\\PRLFS" : 4, "DRIVERS\\PRLMOUSE" : 4, "DRIVERS\\PRLVIDEO" : 4, "DRIVERS\\TIME" : 4,
-                "*.*" : 2,
-                "SERVICES.EXE": 10, "WINDOWS\\SYSTEM32" : 3}
+                "*.*" : 2, "SERVICES.EXE": 10, "WINDOWS\\SYSTEM32" : 3}
 
 #Weighted Regkeys path
 RegKeyList = {"sandbox" : 5, "Hyper-V" : 5,
@@ -62,10 +55,7 @@ RegKeyList = {"sandbox" : 5, "Hyper-V" : 5,
               "\\SYSTEM\\CurrentControlSet\\Enum\\PCI\\VEN_5333" : 5, "\\SYSTEM\\ControlSet001\\Services\\vpcbus" : 5, "\\SYSTEM\\ControlSet001\\Services\\vpc-s3" : 5, "\\SYSTEM\\ControlSet001\\Services\\vpcuhub" : 5,
               "\\SYSTEM\\ControlSet001\\Services\\msvmmouf" : 5,
               "\\SYSTEM\\CurrentControlSet\\Enum\\PCI\\VEN_15AD" : 5, "VMware" : 5, "vmware" : 5, "VMWARE" : 5, "vmdebug" : 5, "vmmouse" : 5, "VMTools" : 5, "VMMEMCTL" : 5, "vmci" : 5, "vmx86" : 5,
-              "Wine" : 4,
-              "xen" :4,
-              "\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion" : 3,
-              "Rpc": 4}
+              "Wine" : 4, "xen" :4, "\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion" : 3, "Rpc": 4}
 
 #Weighted RegKeys Values (key : [Weight, Value])
 RegKeyValueList = {"\\HARDWARE\\Description\\System" : [4, "SystemBiosDate", "SystemProductName", "SystemBiosVersion", "VideoBiosVersion"],
@@ -78,40 +68,24 @@ RegKeyValueList = {"\\HARDWARE\\Description\\System" : [4, "SystemBiosDate", "Sy
                    "HKLM\\SYSTEM\\CurrentControlSet\\Control" : [3, "SystemProductName", "Service", "Device Description"]}
 
 #Weighted list of commands
-GeneralCommandList = {"IsDebuggerPresent" : 5, "CheckRemoteDebuggerPresent" : 5,
-                      "GetLocalTime" : 3, "GetSystemTimeAsFileTime" : 3, "GetTimeZoneInformation" : 3,
-                      "GetComputerNameA" : 3, "GetComputerNameW" :3,
-                      "GetUserDefaultLCID" : 2,
-                      "GetUserName" : 2, "GetUserNameA" :2, "GetUserNameW" :2,
-                      "GetVersion" : 1, "GetVersionEx" :1 , "GetVersionExA" :1, "GetVersionEx" :1,
-                      "GlobalMemoryStatusEx" : 2,
-                      "getenv" : 2,
-                      "GetAdaptersInfo" : 3,
-                      "GetMonitorInfo" : 2, "GetMonitorInfoA" : 2 , "GetMonitorInfoW" : 2, "EnumDisplayDevices" : 2,
-                      "GetDesktopWindow" :2, "GetWindowRect" : 2,
-                      "NtDelayExecution" :4, "NtQueryPerformanceCounter" :4,
-                      "FindNextFile" : 2, "FindNextFileA" : 2, "FindNextFileW" : 2,
-                      "GetSystemInfo" : 2,
-                      "GetCursorPos" : 3,
-                      "FindWindow" : 3, "FindWindowW" : 3, "FindWindowA" : 3,
-                      "WNetGetProviderName" : 4, "WNetGetProviderNameW" : 4, "WNetGetProviderNameA" : 4,
-                      "GetKeyboardLayout" : 3, "GetKeyboardLayout-lib" : 3,
-                      "GetPwrCapabilities" : 5,
-                      "ChangeServiceConfigW" : 2,
+GeneralCommandList = {"IsDebuggerPresent" : 5, "CheckRemoteDebuggerPresent" : 5, "GetLocalTime" : 3, "GetSystemTimeAsFileTime" : 3, "GetTimeZoneInformation" : 3,
+                      "GetComputerNameA" : 3, "GetComputerNameW" :3, "GetUserDefaultLCID" : 2, "GetUserName" : 2, "GetUserNameA" :2, "GetUserNameW" :2,
+                      "GetVersion" : 1, "GetVersionEx" :1 , "GetVersionExA" :1, "GetVersionEx" :1, "GlobalMemoryStatusEx" : 2, "getenv" : 2,
+                      "GetAdaptersInfo" : 3, "GetMonitorInfo" : 2, "GetMonitorInfoA" : 2 , "GetMonitorInfoW" : 2, "EnumDisplayDevices" : 2, "GetDesktopWindow" :2, "GetWindowRect" : 2,
+                      "NtDelayExecution" :4, "NtQueryPerformanceCounter" :4, "FindNextFile" : 2, "FindNextFileA" : 2, "FindNextFileW" : 2, "GetSystemInfo" : 2,
+                      "GetCursorPos" : 3, "FindWindow" : 3, "FindWindowW" : 3, "FindWindowA" : 3, "WNetGetProviderName" : 4, "WNetGetProviderNameW" : 4, "WNetGetProviderNameA" : 4,
+                      "GetKeyboardLayout" : 3, "GetKeyboardLayout-lib" : 3, "GetPwrCapabilities" : 5, "ChangeServiceConfigW" : 2,
                       "SetupDiGetDeviceRegistryProperty" : 2, "SetupDiGetDeviceRegistryPropertyW" : 2, "SetupDiGetDeviceRegistryPropertyA" : 2,
-                      "GetWindowText" : 3, "GetWindowTextA" : 3, "GetWindowTextW" : 3, "FindWindow" : 3,
-                      "LoadLibraryA" : 2, "LoadLibraryW" : 2, "LoadLibraryExA" :2 , "LoadLibraryExW" :2,
+                      "GetWindowText" : 3, "GetWindowTextA" : 3, "GetWindowTextW" : 3, "FindWindow" : 3, "LoadLibraryA" : 2, "LoadLibraryW" : 2, "LoadLibraryExA" :2 , "LoadLibraryExW" :2,
                       "GetDiskFreeSpaceEx" :2 , "GetDiskFreeSpaceExW" :2 , "GetDiskFreeSpaceExA" :2,
                       "GetTickCount" :4, "SetTimer" : 4, "WaitForSingleObject" : 4, "GetSystemTimeAsFileTime" :4 , "IcmpCreateFile" : 4, "IcmpSendEcho" : 4,
-                      "WMI-Query" : 5,
-                      "NtQueryDO" : 2,
-                      "NtOpenKey" : 2, "NtEnumerateKey" :2 , "NtQueryValueKey":2 , "NtQueryAttributesFile" :2}
+                      "WMI-Query" : 5, "NtQueryDO" : 2, "NtOpenKey" : 2, "NtEnumerateKey" :2 , "NtQueryValueKey":2 , "NtQueryAttributesFile" :2}
 
 #List of Files to not modificate
 whitelistFile = ["SVCHOST.EXE", "ACLAYERS.DLL", "CMD.EXE", "SORTDEFAULT.NLS", "DESKTOP.INI", "EE.EXE", "APPDATA", "MOUNTPOINTMANAGER", "EN", "STATICCACHE.DAT", "OLEACCRC.DLL", "ACXTRNAL.DLL", "MSVFW32.DLL.MUI", "AVICAP32.DLL.MUI",
                  "KERNELBASE.DLL.MUI", "MSCTF.DLL.MUI", "WERFAULT.EXE.MUI", "FAULTREP.DLL.MUI", "DWM.EXE", "EXPLORER.EXE", "WMIPRVSE.EXE", "PIN.EXE", "RSAENH.DLL", "SXBOY.EXE",
                  "OSSPROXY.PDB", "SERVICES.EXE", "SUP.DLL", "D3D8THK.DLL", "VERSION.DLL", "MSIMG32.DLL", "WINNSI.DLL", "DHCPCSVC.DLL", "PROFAPI.DLL", "D3D9.DLL", "DWMAPI.DLL", "RASAPI32.DLL",
-                 "FAULTREP.DLL", "RTUTILS.DLL", "MFC42U.DLL", "ODBC32.DLL"]
+                 "FAULTREP.DLL", "RTUTILS.DLL", "MFC42U.DLL", "ODBC32.DLL", "API-MS-WIN-CORE-FIBERS-L1-1-1.DLL", "API-MS-WIN-CORE-FIBERS-I1-1-1.DLL"]
 
 #List of Keys to not modificate
 whitelistKey = ["MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Session Manager", "Machine\\SYSTEM\\CurrentControlSet\\Control\\Session Manager", "\\REGISTRY\\MACHINE", "Machine\\SOFTWARE\\Policies\\Microsoft\\Windows\\Safer\\CodeIdentifiers",
@@ -132,874 +106,925 @@ whitelistKey = ["MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Session Manager", 
                 "Machine\\SYSTEM\\CurrentControlSet\\Services\\Psched\\Parameters\\Winsock", "Machine\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\\Winsock", "Machine\\SYSTEM\\CurrentControlSet\\Services\\RDPNP\\NetworkProvider", "Machine\\SYSTEM\\CurrentControlSet\\Services\\WebClient\\NetworkProvider",
                 "Machine\\SYSTEM\\CurrentControlSet\\Services\\DNS", "Machine\\SYSTEM\\CurrentControlSet\\Services\\Winsock\\Setup Migration\\Providers", "Machine\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\PeerDist\\Service"]
 
+#List of Key Values to not modificate
 whitelistValue = [["Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows", "RunDiagnosticLoggingApplicationManagement"], ["Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\GRE_Initialize", "DisableMetaFiles"], ["Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options", "EnableDefaultReply"],
                   ["Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows", "NotifySettingChanges"], ["Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows", "ExecutablesToTrace"], ["Machine\MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers", "C:\Pin311\ee.exe"],
                   ["Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows", "ShutdownTimeout"], ["MACHINE\SYSTEM\CurrentControlSet\Control\Session Manager\AppCompatibility", "DisableAppCompat"], ["Machine\SOFTWARE\Policies\Microsoft\MUI\Settings", "PreferredUILanguages"],
                   ["Machine\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer\Run", "Policies"], ["Machine\SOFTWARE\Microsoft\Cryptography\Defaults\Provider\Microsoft Strong Cryptographic Provider", "Image Path"], ["Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows", "Load"],
                   ["Machine\SOFTWARE\Microsoft\Windows\CurrentVersion\Setup", "SourcePath"], ["Machine\SOFTWARE\Microsoft\Windows\CurrentVersion", "DevicePath"], ["Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\AeDebug", "Auto"]]
 
-
+#List of Peak Function
 peakList = ["Getaddrinfo", "Socket", "Connect", "Send", "Sendto", "Recv", "Recvfrom", "CloseSocket", "InternetOpen", "InternetConnect", "HttpOpenRequest", "HttpSendRequest", "InternetReadFile", "WinHttpOpen", "WinHttpConnect", "WinHttpOpenRequest", "WinHttpSendRequest", "WinHttpWriteData", "WinHttpReceiveResponse", "WinHttpQueryData",
             "WinHttpReadData", "WSASocket", "WSAIoctl", "ioctlsocket", "InternetOpenUrlA", "HttpAddRequestHeadersA", "UrlDownloadToFile"] #GetKeyState, ShellExecute, WinExec
 
 noExistFiles = []           #List of Files to be "delete" through BluePill
 noExistKeys = []            #List of Keys to be "delete" through BluePill
 
-toCreateFiles = []
-toCreatekeys = []
+toCreateFiles = []          #List of Files to be "create" through BluePill
+toCreatekeys = []           #List of Keys to be "create" through BluePill
 
 FileDatabase = {}           #File: [weight, isPresent, endAction, flag]
 KeyDatabase = {}            #Key:  [weight, valueKey[], isPresent[], endAction[], flag[]]
 IterationDatabase = {}      #Iteration: [FileDatabase, weight]
 
-plot_x = []
-plot_y = []
+plot_x = []                 #X coordinates for plot
+plot_y = []                 #Y coordinates for plot
 
-last = 0
+last = 0                    #Last Action indicator
 
-n_equal = 0
-previous_n = 0
-peak = False
-possiblyPeak = False
-startWeight = 0
-
-
+n_equal = 0                 #Weight Value of actual iteration
+previous_n = 0              #Weight Value of previous iteration
+peak = False                #Peak found flag
+possiblyPeak = False        #Possibly peak found flag
+startWeight = 0             #Weight of first iteration
 
 
-def writeBlackListFile():
-    f = open(BluePill_blackListFile_path,"w")
-    for i in noExistFiles:
-        f.write(i+'\n')
-    f.close()
+class AG:
+    def __init__(self, win, tex, lab):
 
+        def writeBlackListFile():
+            f = open(BluePill_blackListFile_path,"w")
+            for i in noExistFiles:
+                f.write(i+'\n')
+            f.close()
 
-def writeToCreateFile():
-    f = open(ToCreateFile_path,"w")
-    for i in toCreateFiles:
-        f.write(i+'\n')
-    f.close()
+        def writeToCreateFile():
+            f = open(ToCreateFile_path,"w")
+            for i in toCreateFiles:
+                f.write(i+'\n')
+            f.close()
 
-
-def writeBlackListKey():
-    f = open(BluePill_blackListKey_path,"w")
-    for i in noExistKeys:
-        l = i.split("\\")
-        s=""
-        if len(l)>1:
-            for elem in  l[1:len(l)]:
-                if elem != l[len(l)-1]:
-                    s += str(elem)+"\\"
+        def writeBlackListKey():
+            f = open(BluePill_blackListKey_path,"w")
+            for i in noExistKeys:
+                l = i.split("\\")
+                s=""
+                if len(l)>1:
+                    for elem in  l[1:len(l)]:
+                        if elem != l[len(l)-1]:
+                            s += str(elem)+"\\"
+                        else:
+                            s += str(elem)
+                    f.write(s+'\n')
                 else:
-                    s += str(elem)
-            f.write(s+'\n')
-        else:
-            f.write(i+'\n')
-    f.close()
-
-def writeToCreateKey():
-    f = open(ToCreateKey_path,"w")
-    for i in toCreatekeys:
-        f.write(i+'\n')
-    f.close()
-
-
-def calculateWeightFile(command, mode, targetFile):
-    valueCommand = FileCommandList[command]
-    valueMode = 0
-    if mode in ModeList.keys():
-        valueMode = ModeList[mode]
-    else:
-        valueMode = 2
-    valueName = 1
-    maxName =""
-    for n in FileNameList.keys():
-        if n in targetFile.upper() or n in targetFile:
-            if FileNameList[n] > valueName:
-                valueName = FileNameList[n]
-                maxName = n
-    return (valueCommand + valueMode + valueName)/3
-
-
-def calculateWeightKey(key, value):
-    valueKey = 2
-    valueValue = 0
-    for k in RegKeyList.keys():
-        if k in key: #or k.upper() in key.upper():
-            valueKey = RegKeyList[k]
-
-    for k in RegKeyValueList.keys():
-        if k in key:
-            if value in RegKeyValueList[k]:
-                valueValue = RegKeyValueList[k][0]
-                return (valueKey + valueValue) / 2
-    return valueKey
-
-
-def calculateIterWeight(actualEvasionPath, initialFilesNumber, initialThreadsNumber):
-    global possiblyPeak
-    endFilesNumber = 0
-    commandsWeight = 0
-    threads = []
-    linesNumber = 0
-    lastLine = ""
-    iterLinesList = []
-    for file in os.listdir(actualEvasionPath):
-        if "evasion" in file:
-            f = open (actualEvasionPath + file,"r")
-            while (True):
-                    try:
-                        line = f.readline()
-                        break
-                    except:
-                        None
-            while line != "":
-                thread = line.split(":")[0]
-                if thread not in threads :
-                    threads.append(thread)
-                try:
-                    command = line.split("[")[1].split("]")[0]
-                except:
-                    command = ""
-                if  line not in iterLinesList:
-                    iterLinesList.append(line)
-                    if command in GeneralCommandList.keys() and line != lastLine:
-                        commandsWeight += GeneralCommandList[command]
-                    elif command in FileCommandList.keys() and line != lastLine:
-                        commandsWeight += FileCommandList[command]
-                    elif command in peakList and line != lastLine:
-                        print("-------Possibly Peak: "+command)
-                        possiblyPeak = True
-                        commandsWeight += 20
-                    elif line != lastLine:
-                        commandsWeight += 1
-                lastLine = line
-                while (True):
-                    try:
-                        line = f.readline()
-                        break
-                    except:
-                        #print("Error reading line")
-                        None
+                    f.write(i+'\n')
             f.close()
-        endFilesNumber += 1 
-    FilesNumberDiff = endFilesNumber - initialFilesNumber          #Processes Number Difference
-    ThreadsNumberDiff =  len(threads) - initialThreadsNumber       #Threads Number Difference
-    return (commandsWeight) * (FilesNumberDiff + ThreadsNumberDiff +1)
 
+        def writeToCreateKey():
+            f = open(ToCreateKey_path,"w")
+            for i in toCreatekeys:
+                f.write(i+'\n')
+            f.close()
 
-def findFile(targetFile):
-    f = open (findFile_path, "w")
-    f.write(targetFile)
-    f.close()
-    os.system('VBoxManage --nologo guestcontrol "Malware_Evasion" run --exe "Z://Run_FindFile.bat" --username Edo --password edoardo1 --wait-stdout')
-    f = open (responseFile_path, "r")
-    res = f.readline()
-    f.close()
-    return int(res)
-
-
-def findKey(targetKey, valueKey):
-    f = open (findKey_path, "w")
-    f.write(targetKey+";"+valueKey)
-    f.close()
-    os.system('VBoxManage --nologo guestcontrol "Malware_Evasion" run --exe "Z://Run_FindKey.bat" --username Edo --password edoardo1 --wait-stdout')
-    f = open (responseKey_path, "r")
-    res = f.readline()
-    f.close()
-    return int(res)
-    
-    
-def actionArtifact():
-    global last
-    importantFile = ""
-    importantKey = ""
-    importantValue = ""
-    maxWeightFile = 0
-    maxWeightKey = 0
- 
-    if len(FileDatabase) > 0:
-        for i in FileDatabase.keys():
-            if FileDatabase[i][0] > maxWeightFile and not FileDatabase[i][3]:
-                maxWeightFile = FileDatabase[i][0]
-                importantFile = i
-
-    if len(KeyDatabase) > 0:
-        for i in KeyDatabase.keys():
-            if len(KeyDatabase[i][1]) > 0:
-                for j in range(len(KeyDatabase[i][1])):
-                    if KeyDatabase[i][0] > maxWeightKey and not KeyDatabase[i][4][j+1]:
-                        maxWeightKey = KeyDatabase[i][0]
-                        importantValue = KeyDatabase[i][1][j]
-                        importantKey = i
+        def calculateWeightFile(command, mode, targetFile):
+            valueCommand = FileCommandList[command]
+            valueMode = 0
+            if mode in ModeList.keys():
+                valueMode = ModeList[mode]
             else:
-                if KeyDatabase[i][0] > maxWeightKey and not KeyDatabase[i][4][0]:
-                    maxWeightKey = KeyDatabase[i][0]
-                    importantKey = i
+                valueMode = 2
+            valueName = 1
+            maxName =""
+            for n in FileNameList.keys():
+                if n in targetFile.upper() or n in targetFile:
+                    if FileNameList[n] > valueName:
+                        valueName = FileNameList[n]
+                        maxName = n
+            return (valueCommand + valueMode + valueName)/3
+
+        def calculateWeightKey(key, value):
+            valueKey = 2
+            valueValue = 0
+            for k in RegKeyList.keys():
+                if k in key: #or k.upper() in key.upper():
+                    valueKey = RegKeyList[k]
+
+            for k in RegKeyValueList.keys():
+                if k in key:
+                    if value in RegKeyValueList[k]:
+                        valueValue = RegKeyValueList[k][0]
+                        return (valueKey + valueValue) / 2
+            return valueKey
+
+        def calculateIterWeight(actualEvasionPath, initialFilesNumber, initialThreadsNumber):
+            global possiblyPeak
+            global peak
+            endFilesNumber = 0
+            commandsWeight = 0
+            threads = []
+            linesNumber = 0
+            lastLine = ""
+            iterLinesList = []
+            for file in os.listdir(actualEvasionPath):
+                if "evasion" in file:
+                    f = open (actualEvasionPath + file,"r")
+                    while (True):
+                            try:
+                                line = f.readline()
+                                break
+                            except:
+                                None
+                    while line != "":
+                        thread = line.split(":")[0]
+                        if thread not in threads :
+                            threads.append(thread)
+                        try:
+                            command = line.split("[")[1].split("]")[0]
+                        except:
+                            command = ""
+                        if  line not in iterLinesList:
+                            iterLinesList.append(line)
+                            if command in GeneralCommandList.keys() and line != lastLine:
+                                commandsWeight += GeneralCommandList[command]
+                            elif command in FileCommandList.keys() and line != lastLine:
+                                commandsWeight += FileCommandList[command]
+                            elif command in peakList and line != lastLine:
+                                if not peak:
+                                    Running.setText(win, tex, "-------Possibly Peak: "+command+'\n', "green")
+                                    Running.setPeak(win, lab, "Possible", "yellow")
+                                    #print("-------Possibly Peak: "+command)
+                                possiblyPeak = True
+                                commandsWeight += 20
+                            elif line != lastLine:
+                                commandsWeight += 1
+                        lastLine = line
+                        while (True):
+                            try:
+                                line = f.readline()
+                                break
+                            except:
+                                #print("Error reading line")
+                                None
+                    f.close()
+                endFilesNumber += 1 
+            FilesNumberDiff = endFilesNumber - initialFilesNumber          #Processes Number Difference
+            ThreadsNumberDiff =  len(threads) - initialThreadsNumber       #Threads Number Difference
+            return (commandsWeight) * (FilesNumberDiff + ThreadsNumberDiff +1)
+
+        def findFile(targetFile):
+            f = open (findFile_path, "w")
+            f.write(targetFile)
+            f.close()
+            os.system('VBoxManage --nologo guestcontrol "Malware_Evasion" run --exe "Z://Run_FindFile.bat" --username Edo --password edoardo1 --wait-stdout')
+            f = open (responseFile_path, "r")
+            res = f.readline()
+            f.close()
+            return int(res)
+
+        def findKey(targetKey, valueKey):
+            f = open (findKey_path, "w")
+            f.write(targetKey+";"+valueKey)
+            f.close()
+            os.system('VBoxManage --nologo guestcontrol "Malware_Evasion" run --exe "Z://Run_FindKey.bat" --username Edo --password edoardo1 --wait-stdout')
+            f = open (responseKey_path, "r")
+            res = f.readline()
+            f.close()
+            return int(res)
+            
+        def actionArtifact():
+            global last
+            importantFile = ""
+            importantKey = ""
+            importantValue = ""
+            maxWeightFile = 0
+            maxWeightKey = 0
+         
+            if len(FileDatabase) > 0:
+                for i in FileDatabase.keys():
+                    if FileDatabase[i][0] > maxWeightFile and not FileDatabase[i][3]:
+                        maxWeightFile = FileDatabase[i][0]
+                        importantFile = i
+
+            if len(KeyDatabase) > 0:
+                for i in KeyDatabase.keys():
+                    if len(KeyDatabase[i][1]) > 0:
+                        for j in range(len(KeyDatabase[i][1])):
+                            if KeyDatabase[i][0] > maxWeightKey and not KeyDatabase[i][4][j+1]:
+                                maxWeightKey = KeyDatabase[i][0]
+                                importantValue = KeyDatabase[i][1][j]
+                                importantKey = i
+                    else:
+                        if KeyDatabase[i][0] > maxWeightKey and not KeyDatabase[i][4][0]:
+                            maxWeightKey = KeyDatabase[i][0]
+                            importantKey = i
+                            
+            if importantFile == "" and importantKey == "":
+                print("Error: actionArtifact")
+                return None, None
+
+            if maxWeightFile >= maxWeightKey:
+                if FileDatabase[importantFile][1] == 1:
+                     last = 1
+                     Running.setText(win, tex, "Deleting: "+importantFile+"..."+'\n', "coral")
+                     #print("Deleting: "+importantFile+"...")
+                     l = importantFile.split("\\")
+                     name = l[len(l)-1]
+                     path = "".join(str(elem)+"\\\\" for elem in l[0:len(l)-1])
+                     if name == "*.*":
+                        if path+"ag.txt" in toCreateFiles:
+                            toCreateFiles.remove((path+"ag"+name[1:len(name)]))
+                            writeToCreateFile()
+                            FileDatabase[importantFile][1] = 0
+                            FileDatabase[importantFile][3] = True
+                            return importantFile, None
+                        noExistFiles.append(path+"ag.txt")
+                        writeBlackListFile()
+                     elif "*" in name:
+                        if path+"ag"+name[1:len(name)] in toCreateFiles:
+                            toCreateFiles.remove(path+"ag"+name[1:len(name)])
+                            writeToCreateFile()
+                            FileDatabase[importantFile][1] = 0
+                            FileDatabase[importantFile][3] = True
+                            return importantFile, None
+                        noExistFiles.append(path+"ag"+name[1:len(name)])
+                        writeBlackListFile()
+                     else:
+                         if importantFile in toCreateFiles:
+                            toCreateFiles.remove(importantFile)
+                            writeToCreateFile()
+                            FileDatabase[importantFile][1] = 0
+                            FileDatabase[importantFile][3] = True
+                            return importantFile, None
+                         noExistFiles.append(importantFile)
+                         writeBlackListFile()
+                     FileDatabase[importantFile][1] = 0
+                else:
+                    last = 2
+                    Running.setText(win, tex, "Creating: "+importantFile+"..."+'\n', "coral")
+                    #print("Creating: "+importantFile+"...")
+                    l = importantFile.split("\\")
+                    name = l[len(l)-1]
+                    path = "".join(str(elem)+"\\\\" for elem in l[0:len(l)-1])
+                    if name == "*.*":
+                        if path+"ag.txt" in noExistFiles:
+                            noExistFiles.remove(path+"ag.txt")
+                            writeBlackListFile()
+                            FileDatabase[importantFile][1] = 1
+                            FileDatabase[importantFile][3] = True
+                            return importantFile, None
+                        toCreateFilesappend(path+"ag.txt")
+                        writeToCreateFile()
+                    elif "*" in name:
+                        if path+"ag"+name[1:len(name)] in noExistFiles:
+                            noExistFiles.remove(path+"ag"+name[1:len(name)])
+                            writeBlackListFile()
+                            FileDatabase[importantFile][1] = 1
+                            FileDatabase[importantFile][3] = True
+                            return importantFile, None
+                        toCreateFiles.append(path+"ag"+name[1:len(name)])
+                        writeToCreateFile()
+                    else:
+                        if importantFile in noExistFiles:
+                            noExistFiles.remove(importantFile)
+                            writeBlackListFile()
+                            FileDatabase[importantFile][1] = 1
+                            FileDatabase[importantFile][3] = True
+                            return importantFile, None
+                        toCreateFiles.append(importantFile)
+                        writeToCreateFile()
+                    FileDatabase[importantFile][1] = 1
+                FileDatabase[importantFile][3] = True
+                return importantFile, None
                     
-    if importantFile == "" and importantKey == "":
-        print("Error: actionArtifact")
-        return None, None
-
-    if maxWeightFile >= maxWeightKey:
-        if FileDatabase[importantFile][1] == 1:
-             last = 1
-             print("Deleting: "+importantFile+"...")
-             l = importantFile.split("\\")
-             name = l[len(l)-1]
-             path = "".join(str(elem)+"\\\\" for elem in l[0:len(l)-1])
-             if name == "*.*":
-                if path+"ag.txt" in toCreateFiles:
-                    toCreateFiles.remove((path+"ag"+name[1:len(name)]))
-                    writeToCreateFile()
-                    FileDatabase[importantFile][1] = 0
-                    FileDatabase[importantFile][3] = True
-                    return importantFile, None
-                noExistFiles.append(path+"ag.txt")
-                writeBlackListFile()
-             elif "*" in name:
-                if path+"ag"+name[1:len(name)] in toCreateFiles:
-                    toCreateFiles.remove(path+"ag"+name[1:len(name)])
-                    writeToCreateFile()
-                    FileDatabase[importantFile][1] = 0
-                    FileDatabase[importantFile][3] = True
-                    return importantFile, None
-                noExistFiles.append(path+"ag"+name[1:len(name)])
-                writeBlackListFile()
-             else:
-                 if importantFile in toCreateFiles:
-                    toCreateFiles.remove(importantFile)
-                    writeToCreateFile()
-                    FileDatabase[importantFile][1] = 0
-                    FileDatabase[importantFile][3] = True
-                    return importantFile, None
-                 noExistFiles.append(importantFile)
-                 writeBlackListFile()
-             FileDatabase[importantFile][1] = 0
-        else:
-            last = 2
-            print("Creating: "+importantFile+"...")
-            l = importantFile.split("\\")
-            name = l[len(l)-1]
-            path = "".join(str(elem)+"\\\\" for elem in l[0:len(l)-1])
-            if name == "*.*":
-                if path+"ag.txt" in noExistFiles:
-                    noExistFiles.remove(path+"ag.txt")
-                    writeBlackListFile()
-                    FileDatabase[importantFile][1] = 1
-                    FileDatabase[importantFile][3] = True
-                    return importantFile, None
-                toCreateFilesappend(path+"ag.txt")
-                writeToCreateFile()
-            elif "*" in name:
-                if path+"ag"+name[1:len(name)] in noExistFiles:
-                    noExistFiles.remove(path+"ag"+name[1:len(name)])
-                    writeBlackListFile()
-                    FileDatabase[importantFile][1] = 1
-                    FileDatabase[importantFile][3] = True
-                    return importantFile, None
-                toCreateFiles.append(path+"ag"+name[1:len(name)])
-                writeToCreateFile()
             else:
-                if importantFile in noExistFiles:
-                    noExistFiles.remove(importantFile)
-                    writeBlackListFile()
-                    FileDatabase[importantFile][1] = 1
-                    FileDatabase[importantFile][3] = True
-                    return importantFile, None
-                toCreateFiles.append(importantFile)
-                writeToCreateFile()
-            FileDatabase[importantFile][1] = 1
-        FileDatabase[importantFile][3] = True
-        return importantFile, None
-            
-    else:
-        if len(KeyDatabase[importantKey][1]) == 0 or importantValue == None:
-            if KeyDatabase[importantKey][2][0] == 1:
-                last = 3
-                print("Deleting: "+importantKey+"...")
-                if importantKey+";" in toCreatekeys:
-                    toCreatekeys.remove(importantKey+";")
-                    writeToCreateKey()
-                    KeyDatabase[importantKey][2][0] = 0
+                if len(KeyDatabase[importantKey][1]) == 0 or importantValue == None:
+                    if KeyDatabase[importantKey][2][0] == 1:
+                        last = 3
+                        Running.setText(win, tex, "Deleting: "+importantKey+"..."+'\n', "coral")
+                        #print("Deleting: "+importantKey+"...")
+                        if importantKey+";" in toCreatekeys:
+                            toCreatekeys.remove(importantKey+";")
+                            writeToCreateKey()
+                            KeyDatabase[importantKey][2][0] = 0
+                            KeyDatabase[importantKey][4][0] = True
+                            return importantKey, None
+                        noExistKeys.append(importantKey+";")
+                        writeBlackListKey()
+                        KeyDatabase[importantKey][2][0] = 0
+                    else:
+                        last = 4
+                        Running.setText(win, tex, "Creating: "+importantKey+"..."+'\n', "coral")
+                        #print("Creating: "+importantKey+"...")
+                        if importantKey+";" in noExistKeys:
+                            noExistKeys.remove(importantKey+";")
+                            writeBlackListKey()
+                            KeyDatabase[importantKey][2][0] = 1
+                            KeyDatabase[importantKey][4][0] = True
+                            return importantKey, None
+                        toCreatekeys.append(importantKey+";")
+                        writeToCreateKey()
+                        KeyDatabase[importantKey][2][0] = 1
                     KeyDatabase[importantKey][4][0] = True
                     return importantKey, None
-                noExistKeys.append(importantKey+";")
-                writeBlackListKey()
-                KeyDatabase[importantKey][2][0] = 0
-            else:
-                last = 4
-                print("Creating: "+importantKey+"...")
-                if importantKey+";" in noExistKeys:
-                    noExistKeys.remove(importantKey+";")
-                    writeBlackListKey()
-                    KeyDatabase[importantKey][2][0] = 1
-                    KeyDatabase[importantKey][4][0] = True
-                    return importantKey, None
-                toCreatekeys.append(importantKey+";")
-                writeToCreateKey()
-                KeyDatabase[importantKey][2][0] = 1
-            KeyDatabase[importantKey][4][0] = True
-            return importantKey, None
 
-        else:
-            pos = (KeyDatabase[importantKey][1]).index(importantValue) + 1
-            if KeyDatabase[importantKey][2][pos] == 1:
-                last = 3
-                print("Deleting: "+importantKey+"  "+importantValue+"...")
-                if importantKey+";"+importantValue in toCreatekeys:
-                    toCreatekeys.remove(importantKey+";"+importantValue)
-                    writeToCreateKey()
-                    KeyDatabase[importantKey][2][pos] = 0
+                else:
+                    pos = (KeyDatabase[importantKey][1]).index(importantValue) + 1
+                    if KeyDatabase[importantKey][2][pos] == 1:
+                        last = 3
+                        Running.setText(win, tex, "Deleting: "+importantKey+"  "+importantValue+"..."+'\n', "coral")
+                        #print("Deleting: "+importantKey+"  "+importantValue+"...")
+                        if importantKey+";"+importantValue in toCreatekeys:
+                            toCreatekeys.remove(importantKey+";"+importantValue)
+                            writeToCreateKey()
+                            KeyDatabase[importantKey][2][pos] = 0
+                            KeyDatabase[importantKey][4][pos] = True
+                            return importantKey, importantValue
+                        noExistKeys.append(importantKey+";"+importantValue)
+                        writeBlackListKey()
+                        KeyDatabase[importantKey][2][pos] = 0
+                    else:
+                        last = 4
+                        Running.setText(win, tex, "Creating: "+importantKey+"  "+importantValue+"..."+'\n', "coral")
+                        #print("Creating: "+importantKey+"  "+importantValue+"...")
+                        if importantKey+";"+importantValue in noExistKeys:
+                            noExistKeys.remove(importantKey+";"+importantValue)
+                            writeBlackListKey()
+                            KeyDatabase[importantKey][2][pos] = 1
+                            KeyDatabase[importantKey][4][pos] = True
+                            return importantKey, importantValue
+                        toCreatekeys.append(importantKey+";"+importantValue)
+                        writeToCreateKey()
+                        KeyDatabase[importantKey][2][pos] = 1
                     KeyDatabase[importantKey][4][pos] = True
                     return importantKey, importantValue
-                noExistKeys.append(importantKey+";"+importantValue)
-                writeBlackListKey()
-                KeyDatabase[importantKey][2][pos] = 0
-            else:
-                last = 4
-                print("Creating: "+importantKey+"  "+importantValue+"...")
-                if importantKey+";"+importantValue in noExistKeys:
-                    noExistKeys.remove(importantKey+";"+importantValue)
-                    writeBlackListKey()
-                    KeyDatabase[importantKey][2][pos] = 1
-                    KeyDatabase[importantKey][4][pos] = True
-                    return importantKey, importantValue
-                toCreatekeys.append(importantKey+";"+importantValue)
-                writeToCreateKey()
-                KeyDatabase[importantKey][2][pos] = 1
-            KeyDatabase[importantKey][4][pos] = True
-            return importantKey, importantValue
 
-        
-def restoreArtifact(LastTouchedElem, LastTouchedValue):
-    global last
-    if LastTouchedElem in FileDatabase.keys():
-        if FileDatabase[LastTouchedElem][1] == 1:
-            print("Deleting: "+LastTouchedElem+"...")
-            l = LastTouchedElem.split("\\")
+        def restoreArtifact(LastTouchedElem, LastTouchedValue):
+            global last
+            if LastTouchedElem in FileDatabase.keys():
+                if FileDatabase[LastTouchedElem][1] == 1:
+                    Running.setText(win, tex, "Deleting: "+LastTouchedElem+"..."+'\n', "coral")
+                    #print("Deleting: "+LastTouchedElem+"...")
+                    l = LastTouchedElem.split("\\")
+                    name = l[len(l)-1]
+                    path = "".join(str(elem)+"\\\\" for elem in l[0:len(l)-1])
+                    if name == "*.*":
+                        if (path+"ag.txt") in toCreateFiles:
+                            toCreateFiles.remove(path+"ag"+name[1:len(name)])
+                    elif "*" in name:
+                       if path+"ag"+name[1:len(name)] in toCreateFiles:
+                           toCreateFiles.remove((path+"ag"+name[1:len(name)]))
+                    else:
+                        if LastTouchedElem in toCreateFiles:
+                           toCreateFiles.remove(LastTouchedElem)
+                    writeToCreateFile()
+                    FileDatabase[LastTouchedElem][1] = 0
+                    FileDatabase[LastTouchedElem][3] = True
+                else:
+                    last = 2
+                    Running.setText(win, tex, "Creating: "+LastTouchedElem+"..."+'\n', "coral")
+                    #print("Creating: "+LastTouchedElem+"...")
+                    l = LastTouchedElem.split("\\")
+                    name = l[len(l)-1]
+                    path = "".join(str(elem)+"\\\\" for elem in l[0:len(l)-1])
+                    if name == "*.*":
+                        if path+"ag.txt" in noExistFiles:
+                            noExistFiles.remove(path+"ag.txt")
+                            writeBlackListFile()
+                            FileDatabase[LastTouchedElem][1] = 1
+                            FileDatabase[LastTouchedElem][3] = True
+                            return
+                        toCreateFiles.append(path+"ag.txt")
+                        writeToCreateFile()
+                    elif "*" in name:
+                        if (path+"ag"+name[1:len(name)]) in noExistFiles:
+                            noExistFiles.remove(path+"ag"+name[1:len(name)])
+                            writeBlackListFile()
+                            FileDatabase[LastTouchedElem][1] = 1
+                            FileDatabase[LastTouchedElem][3] = True
+                            return
+                        toCreateFiles.append(path+"ag"+name[1:len(name)])
+                        writeToCreateFile()
+                    else:
+                        if LastTouchedElem in noExistFiles:
+                            noExistFiles.remove(LastTouchedElem)
+                            writeBlackListFile()
+                            FileDatabase[LastTouchedElem][1] = 1
+                            FileDatabase[LastTouchedElem][3] = True
+                            return
+                        toCreateFiles.append(LastTouchedElem)
+                        writeToCreateFile()
+                    FileDatabase[LastTouchedElem][1] = 1
+                    FileDatabase[LastTouchedElem][3] = True
+
+            elif LastTouchedElem in KeyDatabase.keys():
+                if len(KeyDatabase[LastTouchedElem][1]) == 0 or LastTouchedValue == None:
+                    if KeyDatabase[LastTouchedElem][2][0] == 1:
+                        Running.setText(win, tex, "Deleting: "+LastTouchedElem+"..."+'\n', "coral")
+                        #print("Deleting: "+LastTouchedElem+"...")
+                        if LastTouchedElem+";" in toCreatekeys:
+                            toCreatekeys.remove(LastTouchedElem+";")
+                            writeToCreateKey()
+                        KeyDatabase[LastTouchedElem][2][0] = 0
+                        KeyDatabase[LastTouchedElem][4][0] = True
+                        return
+                    else:
+                        last = 4
+                        Running.setText(win, tex, "Creating: "+LastTouchedElem+"..."+'\n', "coral")
+                        #print("Creating: "+LastTouchedElem+"...")
+                        if LastTouchedElem+";" in noExistKeys:
+                            noExistKeys.remove(LastTouchedElem+";")
+                            writeBlackListKey()
+                            KeyDatabase[LastTouchedElem][2][0] = 1
+                            KeyDatabase[LastTouchedElem][4][0] = True
+                            return
+                        toCreatekeys.append(LastTouchedElem+";")
+                        writeToCreateKey()
+                        KeyDatabase[LastTouchedElem][2][0] = 1
+                        KeyDatabase[LastTouchedElem][4][0] = True
+                        return
+                else:
+                    pos = (KeyDatabase[LastTouchedElem][1]).index(LastTouchedValue) + 1
+                    if KeyDatabase[LastTouchedElem][2][pos] == 1:
+                        Running.setText(win, tex, "Deleting: "+LastTouchedElem+"  "+LastTouchedValue+"..."+'\n', "coral")
+                        #print("Deleting: "+LastTouchedElem+"  "+LastTouchedValue+"...")
+                        if LastTouchedElem+";"+LastTouchedValue in toCreatekeys:
+                            toCreatekeys.remove(LastTouchedElem+";"+LastTouchedValue)
+                            writeToCreateKey()
+                        KeyDatabase[LastTouchedElem][2][pos] = 0
+                        KeyDatabase[LastTouchedElem][4][pos] = True
+                    else:
+                        last = 4
+                        Running.setText(win, tex, "Creating: "+LastTouchedElem+"  "+LastTouchedValue+"..."+'\n', "coral")
+                        #print("Creating: "+LastTouchedElem+"  "+LastTouchedValue+"...")
+                        if LastTouchedElem+";"+LastTouchedValue in noExistKeys:
+                            noExistKeys.remove(LastTouchedElem+";"+LastTouchedValue)
+                            writeBlackListKey()
+                            KeyDatabase[LastTouchedElem][2][pos] = 1
+                            KeyDatabase[LastTouchedElem][4][pos] = True
+                            return
+                        toCreatekeys.append(LastTouchedElem+";"+LastTouchedValue)
+                        writeToCreateKey()
+                        KeyDatabase[LastTouchedElem][2][pos] = 1
+                        KeyDatabase[LastTouchedElem][4][pos] = True
+                    
+        def exitCase():
+            for file in FileDatabase.keys():
+                if FileDatabase[file][3] != True:
+                    return False
+            for key in KeyDatabase.keys():
+                if len(KeyDatabase[key][1]) > 0:
+                    for j in range(len(KeyDatabase[key][1])):
+                        if KeyDatabase[key][4][j+1] != True:
+                            return False
+                else:
+                    if KeyDatabase[key][4][0] != True:
+                            return False
+            return True
+
+        def clearPath(targetFile):
+            l = targetFile.split("\\")
+            path = ""
+            for elem in l[2:len(l)]:
+                if elem != l[len(l)-1]:
+                    path += str(elem)+"\\"
+                else:
+                    path += str(elem)
+            return path 
+
+        def ClearKey(targetKey):
+            l = targetKey.split("\\")
+            ret = ""
+            if l[1] == "Registry" or l[1] == "REGISTRY":
+                if l[2] == "Machine" or l[2] == "MACHINE":
+                    l[3] = l[3].upper()
+                if l[2] == "Root" or l[2] == "ROOT":
+                    l[3] = l[3].upper()
+                if l[2] == "User" or l[2] == "USER":
+                    l[3] = l[3].upper()
+                for elem in  l[2:len(l)]:
+                    if elem != l[len(l)-1]:
+                        ret += str(elem)+"\\"
+                    else:
+                        ret += str(elem)
+                return ret
+            else:
+                l[0] = l[0].upper()
+                if l[0] == "SERVICES":
+                    s="Root\\"
+                else:
+                    s = "Machine\\"
+                for elem in  l[0:len(l)]:
+                    if elem != l[len(l)-1]:
+                        ret += str(elem)+"\\"
+                    else:
+                        ret += str(elem)
+                return s+ret
+
+        def getBestIteration():
+            maxx = 0
+            minn = IterationDatabase[0][0]
+            best = 0
+            for i in IterationDatabase.keys():
+                val = int(IterationDatabase[i][0])
+                if val > maxx:
+                    maxx = val
+                    best = i
+            return best, 100 - ((minn*100)/maxx)
+
+        def inWhiteListFile(file):
+            l = file.split("\\")
             name = l[len(l)-1]
-            path = "".join(str(elem)+"\\\\" for elem in l[0:len(l)-1])
-            if name == "*.*":
-                if (path+"ag.txt") in toCreateFiles:
-                    toCreateFiles.remove(path+"ag"+name[1:len(name)])
-            elif "*" in name:
-               if path+"ag"+name[1:len(name)] in toCreateFiles:
-                   toCreateFiles.remove((path+"ag"+name[1:len(name)]))
-            else:
-                if LastTouchedElem in toCreateFiles:
-                   toCreateFiles.remove(LastTouchedElem)
-            writeToCreateFile()
-            FileDatabase[LastTouchedElem][1] = 0
-            FileDatabase[LastTouchedElem][3] = True
-        else:
-            last = 2
-            print("Creating: "+LastTouchedElem+"...")
-            l = LastTouchedElem.split("\\")
-            name = l[len(l)-1]
-            path = "".join(str(elem)+"\\\\" for elem in l[0:len(l)-1])
-            if name == "*.*":
-                if path+"ag.txt" in noExistFiles:
-                    noExistFiles.remove(path+"ag.txt")
-                    writeBlackListFile()
-                    FileDatabase[LastTouchedElem][1] = 1
-                    FileDatabase[LastTouchedElem][3] = True
-                    return
-                toCreateFiles.append(path+"ag.txt")
-                writeToCreateFile()
-            elif "*" in name:
-                if (path+"ag"+name[1:len(name)]) in noExistFiles:
-                    noExistFiles.remove(path+"ag"+name[1:len(name)])
-                    writeBlackListFile()
-                    FileDatabase[LastTouchedElem][1] = 1
-                    FileDatabase[LastTouchedElem][3] = True
-                    return
-                toCreateFiles.append(path+"ag"+name[1:len(name)])
-                writeToCreateFile()
-            else:
-                if LastTouchedElem in noExistFiles:
-                    noExistFiles.remove(LastTouchedElem)
-                    writeBlackListFile()
-                    FileDatabase[LastTouchedElem][1] = 1
-                    FileDatabase[LastTouchedElem][3] = True
-                    return
-                toCreateFiles.append(LastTouchedElem)
-                writeToCreateFile()
-            FileDatabase[LastTouchedElem][1] = 1
-            FileDatabase[LastTouchedElem][3] = True
-
-    elif LastTouchedElem in KeyDatabase.keys():
-        if len(KeyDatabase[LastTouchedElem][1]) == 0 or LastTouchedValue == None:
-            if KeyDatabase[LastTouchedElem][2][0] == 1:
-                print("Deleting: "+LastTouchedElem+"...")
-                if LastTouchedElem+";" in toCreatekeys:
-                    toCreatekeys.remove(LastTouchedElem+";")
-                    writeToCreateKey()
-                KeyDatabase[LastTouchedElem][2][0] = 0
-                KeyDatabase[LastTouchedElem][4][0] = True
-                return
-            else:
-                last = 4
-                print("Creating: "+LastTouchedElem+"...")
-                if LastTouchedElem+";" in noExistKeys:
-                    noExistKeys.remove(LastTouchedElem+";")
-                    writeBlackListKey()
-                    KeyDatabase[LastTouchedElem][2][0] = 1
-                    KeyDatabase[LastTouchedElem][4][0] = True
-                    return
-                toCreatekeys.append(LastTouchedElem+";")
-                writeToCreateKey()
-                KeyDatabase[LastTouchedElem][2][0] = 1
-                KeyDatabase[LastTouchedElem][4][0] = True
-                return
-        else:
-            pos = (KeyDatabase[LastTouchedElem][1]).index(LastTouchedValue) + 1
-            if KeyDatabase[LastTouchedElem][2][pos] == 1:
-                print("Deleting: "+LastTouchedElem+"  "+LastTouchedValue+"...")
-                if LastTouchedElem+";"+LastTouchedValue in toCreatekeys:
-                    toCreatekeys.remove(LastTouchedElem+";"+LastTouchedValue)
-                    writeToCreateKey()
-                KeyDatabase[LastTouchedElem][2][pos] = 0
-                KeyDatabase[LastTouchedElem][4][pos] = True
-            else:
-                last = 4
-                print("Creating: "+LastTouchedElem+"  "+LastTouchedValue+"...")
-                if LastTouchedElem+";"+LastTouchedValue in noExistKeys:
-                    noExistKeys.remove(LastTouchedElem+";"+LastTouchedValue)
-                    writeBlackListKey()
-                    KeyDatabase[LastTouchedElem][2][pos] = 1
-                    KeyDatabase[LastTouchedElem][4][pos] = True
-                    return
-                toCreatekeys.append(LastTouchedElem+";"+LastTouchedValue)
-                writeToCreateKey()
-                KeyDatabase[LastTouchedElem][2][pos] = 1
-                KeyDatabase[LastTouchedElem][4][pos] = True
-
-            
-def exitCase():
-    for file in FileDatabase.keys():
-        if FileDatabase[file][3] != True:
+            clearF = clearPath(file)
+            for f in whitelistFile:
+                if f in file or f in file.upper() or f in clearF or f in clearF.upper():
+                    return True
             return False
-    for key in KeyDatabase.keys():
-        if len(KeyDatabase[key][1]) > 0:
-            for j in range(len(KeyDatabase[key][1])):
-                if KeyDatabase[key][4][j+1] != True:
-                    return False
-        else:
-            if KeyDatabase[key][4][0] != True:
-                    return False
-    return True
+            
+        def inWhiteListKey(key):
+            return ClearKey(key) in whitelistKey
 
+        def inWhiteListValue(key, value):
+            for elem in whitelistValue:
+                if (ClearKey(key) == elem[0] or key == elem[0]) and value == elem[1]:
+                    return True
+            return False 
 
-def clearPath(targetFile):
-    l = targetFile.split("\\")
-    path = ""
-    for elem in l[2:len(l)]:
-        if elem != l[len(l)-1]:
-            path += str(elem)+"\\"
-        else:
-            path += str(elem)
-    return path 
+        def inDatabaseFile(file):
+            if file not in FileDatabase.keys():        
+                return clearPath(file) in FileDatabase.keys()
+            return True
 
+        def inDatabaseKey(key):
+            return ClearKey(key) in KeyDatabase.keys() 
 
-def ClearKey(targetKey):
-    l = targetKey.split("\\")
-    ret = ""
-    if l[1] == "Registry" or l[1] == "REGISTRY":
-        if l[2] == "Machine" or l[2] == "MACHINE":
-            l[3] = l[3].upper()
-        if l[2] == "Root" or l[2] == "ROOT":
-            l[3] = l[3].upper()
-        if l[2] == "User" or l[2] == "USER":
-            l[3] = l[3].upper()
-        for elem in  l[2:len(l)]:
-            if elem != l[len(l)-1]:
-                ret += str(elem)+"\\"
+        def getCommand(line):
+            command = ""
+            try:    
+                command = line.split("[")[1].split("]")[0]
+            except:
+                #print("Error splitting line "+line)
+                command = ""
+            return command
+
+        def controlKey(targetKey):
+            try:
+                l =  targetKey.split("\\")
+                return not inDatabaseKey(targetKey) and len(l) > 2 and l[len(l)-1] != "\\" and not inWhiteListKey(targetKey)
+            except:
+                return False
+
+        def controlKey2(targetKey):
+            try:
+                l =  targetKey.split("\\")
+                return inDatabaseKey(targetKey) and len(l) > 2 and l[len(l)-1] != "\\" and not inWhiteListKey(targetKey)
+            except:
+                return False
+            
+        def controlFile(targetFile):
+            l =  (clearPath(targetFile)).split("\\")
+            return not inDatabaseFile(targetFile) and len(l) > 2 and "C:" in targetFile and not inWhiteListFile(targetFile) and targetFile[len(targetFile)-1] != "\\"
+
+        def controlValue(targetKey, targetValue):
+            try:
+                l =  targetKey.split("\\")
+                return targetKey in KeyDatabase.keys() and len(l) > 2 and l[len(l)-1] != "\\"  and targetValue not in  KeyDatabase[targetKey][1] and not inWhiteListValue(targetKey, targetValue) and targetValue != None and targetValue != ""
+            except:
+                return False
+
+        def clearFile():
+            for i in path_list:
+                f = open (i, "w")
+                f.write("")
+                f.close()              
+
+        def fixActionMaker():
+            global last
+            if last == 1:                                                                                               #Delete file case
+                noExistFiles.remove(len(noExistFiles))
+                writeBlackListFile()
+            elif last == 2:                                                                                             #Create file case
+                toCreateFiles.remove(len(toCreateFiles))
+                writeToCreateFile()
+            elif last == 3:                                                                                             #Delete Key case
+                noExistKeys.remove(len(noExistKeys))
+                writeBlackListKey()
+            elif last == 4:                                                                                             #Create Key case
+                del toCreatekeys[len(toCreatekeys)]
+                writeToCreateKey()
             else:
-                ret += str(elem)
-        return ret
-    else:
-        l[0] = l[0].upper()
-        if l[0] == "SERVICES":
-            s="Root\\"
-        else:
-            s = "Machine\\"
-        for elem in  l[0:len(l)]:
-            if elem != l[len(l)-1]:
-                ret += str(elem)+"\\"
+                print("Error fixActionMaker")
+
+        def findPeak(n):
+            global previous_n
+            global n_equal
+            global peak
+            
+            rangeValue = int((startWeight * 2)/4)
+            if n - previous_n >= -rangeValue and n - previous_n < rangeValue:
+                val = random.randint(1,100)
+                n_equal += 5
+                if peak and val <= n_equal:
+                    return True
             else:
-                ret += str(elem)
-        return s+ret
+                n_equal = 0
+                if possiblyPeak and n > startWeight + 100:
+                    Running.setPeak(win, lab, "Found", "green")
+                    peak = True
 
+            previous_n = n
+            return False
+            
+            
 
-def getBestIteration():
-    maxx = 0
-    minn = IterationDatabase[0][0]
-    best = 0
-    for i in IterationDatabase.keys():
-        val = int(IterationDatabase[i][0])
-        if val > maxx:
-            maxx = val
-            best = i
-    return best, 100 - ((minn*100)/maxx)
+        iteration = 0                                                                                                   #Number of AG Iteration
+        LastTouchedElement = ""                                                                                         #Last modified Element
+        LastTouchedValue = ""                                                                                           #Last modified Key Value
 
+        Running.setText(win, tex, "ArtifactGenerator\n"+'\n', "black")                                                                            
+        #print("ArtifactGenerator")
+        #rint("")
 
-def inWhiteListFile(file):
-    l = file.split("\\")
-    name = l[len(l)-1]
-    clearF = clearPath(file)
-    for f in whitelistFile:
-        if f in file or f in file.upper() or f in clearF or f in clearF.upper():
-            return True
-    return False
-    
-
-def inWhiteListKey(key):
-    return ClearKey(key) in whitelistKey
-
-
-def inWhiteListValue(key, value):
-    for elem in whitelistValue:
-        if (ClearKey(key) == elem[0] or key == elem[0]) and value == elem[1]:
-            return True
-    return False 
-
-
-def inDatabaseFile(file):
-    if file not in FileDatabase.keys():        
-        return clearPath(file) in FileDatabase.keys()
-    return True
-
-
-def inDatabaseKey(key):
-    return ClearKey(key) in KeyDatabase.keys() 
-
-
-def getCommand(line):
-    command = ""
-    try:    
-        command = line.split("[")[1].split("]")[0]
-    except:
-        #print("Error splitting line "+line)
-        command = ""
-    return command
-
-
-def controlKey(targetKey):
-    try:
-        l =  targetKey.split("\\")
-        return not inDatabaseKey(targetKey) and len(l) > 2 and l[len(l)-1] != "\\" and not inWhiteListKey(targetKey)
-    except:
-        return False
-
-
-def controlKey2(targetKey):
-    try:
-        l =  targetKey.split("\\")
-        return inDatabaseKey(targetKey) and len(l) > 2 and l[len(l)-1] != "\\" and not inWhiteListKey(targetKey)
-    except:
-        return False
-    
-
-def controlFile(targetFile):
-    l =  (clearPath(targetFile)).split("\\")
-    return not inDatabaseFile(targetFile) and len(l) > 3 and "C:" in targetFile and not inWhiteListFile(targetFile) and targetFile[len(targetFile)-1] != "\\"
-
-
-def controlValue(targetKey, targetValue):
-    try:
-        l =  targetKey.split("\\")
-        return targetKey in KeyDatabase.keys() and len(l) > 2 and l[len(l)-1] != "\\"  and targetValue not in  KeyDatabase[targetKey][1] and not inWhiteListValue(targetKey, targetValue) and targetValue != None and targetValue != ""
-    except:
-        return False
-
-
-def clearFile():
-    for i in path_list:
-        f = open (i, "w")
-        f.write("")
-        f.close()
-        
-
-def fixActionMaker():
-    global last
-    if last == 1:                                                                                               #Delete file case
-        noExistFiles.remove(len(noExistFiles))
-        writeBlackListFile()
-    elif last == 2:                                                                                             #Create file case
-        toCreateFiles.remove(len(toCreateFiles))
-        writeToCreateFile()
-    elif last == 3:                                                                                             #Delete Key case
-        noExistKeys.remove(len(noExistKeys))
-        writeBlackListKey()
-    elif last == 4:                                                                                             #Create Key case
-        del toCreatekeys[len(toCreatekeys)]
-        writeToCreateKey()
-    else:
-        print("Error fixActionMaker")
-
-
-def findPeak(n):
-    global previous_n
-    global n_equal
-    global peak
-    
-    rangeValue = int((startWeight * 2)/4)
-    
-    if n - previous_n >= -rangeValue and n - previous_n < rangeValue:
-        val = random.randint(1,100)
-        n_equal += 5
-        if peak and val <= n_equal:
-            return True
-    
-    else:
-        n_equal = 0
-        if possiblyPeak and n > startWeight + 100:
-            peak = True
-
-    previous_n = n
-    return False
-    
-    
-
-
-
-iteration = 0                                                                                                   #Number of AG Iteration
-LastTouchedElement = ""                                                                                         #Last modified Element
-LastTouchedValue = ""                                                                                           #Last modified Key Value
-                                                                            
-print("ArtifactGenerator")
-print("")
-
-os.system('VBoxManage snapshot Malware_Evasion take "AG_Snap" --description "AG_Snap"')
-os.system('VBoxManage startvm "Malware_Evasion" --type headless')
-os.system('VBoxManage guestproperty wait "Malware_Evasion" "/VirtualBox/GuestInfo/OS/LoggedInUsers"')    
-time.sleep(8)
-os.system('VBoxManage snapshot Malware_Evasion take "AG_SnapL" --description "AG_SnapL" --live')
-while(True):    
-    f = open(Iteration_path, "w")
-    f.write(str(iteration))
-    f.close()
-    
-    os.system('VBoxManage --nologo guestcontrol "Malware_Evasion" run --exe "Z://Run_AG.bat" --username Edo --password edoardo1 --wait-stdout ')
-    os.system('VBoxManage controlvm "Malware_Evasion" savestate')
-    os.system('VBoxManage snapshot Malware_Evasion restore "AG_SnapL"')
-    os.system('VBoxManage startvm "Malware_Evasion" --type headless')
-
-    actualEvasionPath = BluePill_evasion_path + str(iteration) + "/"                                            #Path of current evasion.log
-
-    while (True):
-        try:
-            f = open (actualEvasionPath+"behaviour.log","r")
+        os.system('VBoxManage snapshot Malware_Evasion take "AG_Snap" --description "AG_Snap"')
+        os.system('VBoxManage startvm "Malware_Evasion" --type headless')
+        os.system('VBoxManage guestproperty wait "Malware_Evasion" "/VirtualBox/GuestInfo/OS/LoggedInUsers"')    
+        time.sleep(8)
+        os.system('VBoxManage snapshot Malware_Evasion take "AG_SnapL" --description "AG_SnapL" --live')
+        while(True):    
+            f = open(Iteration_path, "w")
+            f.write(str(iteration))
             f.close()
-            break
-        except:
-            print("----AG_ActionMaker Error----")
+            
             os.system('VBoxManage --nologo guestcontrol "Malware_Evasion" run --exe "Z://Run_AG.bat" --username Edo --password edoardo1 --wait-stdout ')
+            os.system('VBoxManage controlvm "Malware_Evasion" savestate')
+            os.system('VBoxManage snapshot Malware_Evasion restore "AG_SnapL"')
+            os.system('VBoxManage startvm "Malware_Evasion" --type headless')
 
-    FilesNumber = 0                                                                                             #Number if files in folder (Different Processes)
-    threads = []                                                                                                #Number of different Treads ina file (Process)
-
-    targetKey = ""
-
-    PreviousLine = ""
-    add_value = 0
-    
-    for file in os.listdir(actualEvasionPath):                                                                  #Read all files in the folder
-        if "evasion" in file:
-            f = open (actualEvasionPath + file,"r")
+            actualEvasionPath = BluePill_evasion_path + str(iteration) + "/"                                            #Path of current evasion.log
 
             while (True):
                 try:
-                    line = f.readline()
+                    f = open (actualEvasionPath+"behaviour.log","r")
+                    f.close()
                     break
                 except:
-                    #print("Error reading line")
-                    None
+                    print("----AG_ActionMaker Error----")
+                    os.system('VBoxManage --nologo guestcontrol "Malware_Evasion" run --exe "Z://Run_AG.bat" --username Edo --password edoardo1 --wait-stdout ')
 
-            while line != "":
-                thread = line.split(":")[0]
-                if thread not in threads :
-                    threads.append(thread)
-                    
-                command = getCommand(line)                                                                      #Get the Command
-                
-                #-------NTOPENKEY Case--------------------------------------------------------------------------------------------------------------------------
-                if command == "NtOpenKey":                                                                      #REGKEY CASE
-                    try:
-                        key = line.split("--")[2].strip()
-                    except:
-                        #print("Error splitting REGKEY commad "+command)
-                        key = ""
-                    
-                    if controlKey(key):                                                                         #Verify the Key Correctness
-                        if iteration > 1:
-                            add_value+=100
-                            print("--NEW FIND--")
-                        targetKey = ClearKey(key)
-                        isPresent = findKey(targetKey,"")                                                       #Verify if the Key is present
-                        weight = calculateWeightKey(targetKey, "")                                              #Calculate the Key Weight
-                        KeyDatabase[targetKey] = [weight, [], [isPresent], [""], [False]]                       #Add key to Database
-                    elif controlKey2(key):
-                        targetKey = ClearKey(key)
-                    else:
-                        targetKey = ""
+            FilesNumber = 0                                                                                             #Number if files in folder (Different Processes)
+            threads = []                                                                                                #Number of different Treads ina file (Process)
 
-                
-                #--------FILE Case-------------------------------------------------------------------------------------------------------------------------------                                                                 
-                elif command in FileCommandList.keys():
-                    targetKey = ""
-                    try:
-                        mode = line.split("[")[1].split("]")[1].split("--")[1].strip()                          #Get the open modality (Read, Open, ...)
-                        targetFile = line.split("[")[1].split("]")[1].split("--")[2].strip()                    #Get the File path
-                    except:
-                         #print("Error splitting FILE commad "+command)
-                         targetFile = ""
-                    if controlFile(targetFile):                                                                 #Verify the File Correctness
-                        if iteration > 0:
-                            add_value+=100
-                        if "?" in targetFile:
-                           targetFile = clearPath(targetFile)
-                        weight = calculateWeightFile(command, mode, targetFile)                                 #Calculate the File Weight
-                        try:    
-                            isPresent = findFile(targetFile)                                                    #Verify if the File is present
-                            FileDatabase[targetFile] = [weight, isPresent, None, False]                         #Add File to Database
-                        except:
-                            l = targetFile.split("\\")
-                            name = l[len(l)-1]
-                            whitelistFile.append(name.upper())
-                            if iteration > 0:
-                                add_value-=100
-                            print("Error file: "+targetFile)
-                            
-                #---------NTQUERYVALUEKEY Case---------------------------------------------------------------------------------------------------------------------
-                if command == "NtQueryValueKey":
-                    valueKey = line.split("--")[1].strip()                                                      #Get the Query Value
-                    if targetKey != "" and controlValue(targetKey, valueKey):
-                        if iteration > 1:
-                            print("--NEW FIND--")
-                            add_value+=50
-                        KeyDatabase[targetKey][1].append(valueKey)                                              #Update the Key Database
-                        isPresent = findKey(targetKey, valueKey)                                                #Verify if the Value is present
-                        KeyDatabase[targetKey][2].append(isPresent)                                             #Update the Key Database
-                        KeyDatabase[targetKey][3].append("")
-                        weight = calculateWeightKey(targetKey, valueKey)                                        #Calculate the Key Weight
-                        KeyDatabase[targetKey][0] = weight                                                      #Update the Key Database
-                        KeyDatabase[targetKey][4].append(False)
+            targetKey = ""
 
-                while (True):
-                    try:
-                        line = f.readline()
-                        break
-                    except:
-                        None
-                if line == PreviousLine:
+            PreviousLine = ""
+            add_value = 0
+            
+            for file in os.listdir(actualEvasionPath):                                                                  #Read all files in the folder
+                if "evasion" in file:
+                    f = open (actualEvasionPath + file,"r")
+
                     while (True):
                         try:
                             line = f.readline()
                             break
                         except:
+                            #print("Error reading line")
                             None
-                PreviousLine = line
+
+                    while line != "":
+                        thread = line.split(":")[0]
+                        if thread not in threads :
+                            threads.append(thread)
+                            
+                        command = getCommand(line)                                                                      #Get the Command
+                        
+                        #-------NTOPENKEY Case--------------------------------------------------------------------------------------------------------------------------
+                        if command == "NtOpenKey":                                                                      #REGKEY CASE
+                            try:
+                                key = line.split("--")[2].strip()
+                            except:
+                                #print("Error splitting REGKEY commad "+command)
+                                key = ""
+                            
+                            if controlKey(key):                                                                         #Verify the Key Correctness
+                                if iteration > 1:
+                                    add_value+=100
+                                    Running.setText(win, tex, "--NEW FIND--"+'\n', "yellow")
+                                    #print("--NEW FIND--")
+                                targetKey = ClearKey(key)
+                                isPresent = findKey(targetKey,"")                                                       #Verify if the Key is present
+                                weight = calculateWeightKey(targetKey, "")                                              #Calculate the Key Weight
+                                KeyDatabase[targetKey] = [weight, [], [isPresent], [""], [False]]                       #Add key to Database
+                            elif controlKey2(key):
+                                targetKey = ClearKey(key)
+                            else:
+                                targetKey = ""
+
+                        
+                        #--------FILE Case-------------------------------------------------------------------------------------------------------------------------------                                                                 
+                        elif command in FileCommandList.keys():
+                            targetKey = ""
+                            try:
+                                mode = line.split("[")[1].split("]")[1].split("--")[1].strip()                          #Get the open modality (Read, Open, ...)
+                                targetFile = line.split("[")[1].split("]")[1].split("--")[2].strip()                    #Get the File path
+                            except:
+                                 #print("Error splitting FILE commad "+command)
+                                 targetFile = ""
+                            if controlFile(targetFile):                                                                 #Verify the File Correctness
+                                if iteration > 0:
+                                    add_value+=100
+                                if "?" in targetFile:
+                                   targetFile = clearPath(targetFile)
+                                weight = calculateWeightFile(command, mode, targetFile)                                 #Calculate the File Weight
+                                try:    
+                                    isPresent = findFile(targetFile)                                                    #Verify if the File is present
+                                    FileDatabase[targetFile] = [weight, isPresent, None, False]                         #Add File to Database
+                                except:
+                                    l = targetFile.split("\\")
+                                    name = l[len(l)-1]
+                                    whitelistFile.append(name.upper())
+                                    if iteration > 0:
+                                        add_value-=100
+                                    print("Error file: "+targetFile)
+                                    
+                        #---------NTQUERYVALUEKEY Case---------------------------------------------------------------------------------------------------------------------
+                        if command == "NtQueryValueKey":
+                            valueKey = line.split("--")[1].strip()                                                      #Get the Query Value
+                            if targetKey != "" and controlValue(targetKey, valueKey):
+                                if iteration > 1:
+                                    Running.setText(win, tex, "--NEW FIND--"+'\n', "yellow")
+                                    #print("--NEW FIND--")
+                                    add_value+=50
+                                KeyDatabase[targetKey][1].append(valueKey)                                              #Update the Key Database
+                                isPresent = findKey(targetKey, valueKey)                                                #Verify if the Value is present
+                                KeyDatabase[targetKey][2].append(isPresent)                                             #Update the Key Database
+                                KeyDatabase[targetKey][3].append("")
+                                weight = calculateWeightKey(targetKey, valueKey)                                        #Calculate the Key Weight
+                                KeyDatabase[targetKey][0] = weight                                                      #Update the Key Database
+                                KeyDatabase[targetKey][4].append(False)
+                        while (True):
+                            try:
+                                line = f.readline()
+                                break
+                            except:
+                                None
+                        if line == PreviousLine:
+                            while (True):
+                                try:
+                                    line = f.readline()
+                                    break
+                                except:
+                                    None
+                        PreviousLine = line
+                    f.close()
+                FilesNumber += 1
+
+            if len(FileDatabase) == 0 and len(KeyDatabase) == 0:                                                        #Case of no Files and no Keys
+                print("No file and Keys queries")
+                break
+
+            iterationWeight = int(calculateIterWeight(actualEvasionPath, FilesNumber, len(threads)))             #Calculate the Iteration Weight
+            if iteration == 0:
+                startWeight = int(iterationWeight)
+            plot_x.append(int(iteration))
+            plot_y.append(int(iterationWeight))
+            IterationDatabase[iteration] = [iterationWeight, noExistFiles.copy(), noExistKeys.copy(), toCreateFiles.copy(), toCreatekeys.copy()]
+            if findPeak(int(iterationWeight)):
+                break
+
+                        
+            if iteration == 0 or IterationDatabase[iteration][0] + 0*add_value > IterationDatabase[iteration-1][0]:
+                Running.setText(win, tex, str(iteration+1)+": BETTER THAN PREVIOUS ITERATION "+str(iterationWeight)+'\n', "yellow")
+                #print(str(iteration+1)+": BETTER THAN PREVIOUS ITERATION "+str(iterationWeight))
+                if iteration > 0 and exitCase() or iteration > 149:
+                    break
+                LastTouchedElement, LastTouchedValue = actionArtifact()
+                if LastTouchedElement == None and LastTouchedValue == None:
+                    break
+            elif IterationDatabase[iteration][0] + 0*add_value == IterationDatabase[iteration-1][0]:
+                Running.setText(win, tex, str(iteration+1)+": EQUAL TO PREVIOUS ITERATION "+str(iterationWeight)+'\n', "yellow")
+                #print(str(iteration+1)+": EQUAL TO PREVIOUS ITERATION "+str(iterationWeight))
+                p = LastTouchedElement
+                restoreArtifact(LastTouchedElement, LastTouchedValue)
+                if iteration > 0 and exitCase() or iteration > 149:
+                    break
+                LastTouchedElement, LastTouchedValue = actionArtifact()
+                if LastTouchedElement == None and LastTouchedValue == None:
+                    break
+            else:
+                Running.setText(win, tex, str(iteration+1)+": WORSE THAN PREVIOUS ITERATION "+str(iterationWeight)+'\n', "yellow")
+                #print(str(iteration+1)+": WORSE THAN PREVIOUS ITERATION "+str(iterationWeight))
+                if iteration > 0 and exitCase() or iteration > 149:
+                    break
+                restoreArtifact(LastTouchedElement, LastTouchedValue)
+
+            iteration += 1
+
+        try:
+            os.system('VBoxManage controlvm Malware_Evasion poweroff')
+            os.system('VBoxManage snapshot Malware_Evasion delete "AG_SnapL"')
+            os.system('VBoxManage snapshot Malware_Evasion delete "AG_Snap"')
+        except:
+            print("Error during VM shutdown")
+
+        try:
+            f = open("report.txt","w")
             f.close()
-        FilesNumber += 1
+            f = open("report.txt","a")
+            f.write("ArtifactGenerator\n")
+            print("")
+            print("")
+            f.write("\n")
+            bestIt, perc = getBestIteration()
+            print("FILES TO BE DELETED")
+            f.write("FILES TO BE DELETED\n")
+            for i in IterationDatabase[bestIt][1]:
+                print (i)
+                f.write(i+"\n")
+            print("")
+            print("FILES TO BE CREATED")
+            f.write("FILES TO BE CREATED\n")
+            for i in IterationDatabase[bestIt][3]:
+                print (i)
+                f.write(i+"\n")
+            print("")
+            print("KEYS TO BE DELETED")
+            f.write("KEYS TO BE DELETED\n")
+            for i in IterationDatabase[bestIt][2]:
+                if i.split(";")[1] != "":
+                    print (i.split(";")[0]+"  Value: "+i.split(";")[1])
+                    f.write(i.split(";")[0]+"  Value: "+i.split(";")[1]+"\n")
+                else:
+                    print(i.split(";")[0])
+                    f.write(i.split(";")[0]+"\n")
+            print("")
+            print("KEYS TO BE CREATED")
+            f.write("KEYS TO BE CREATED\n")
+            for i in IterationDatabase[bestIt][4]:
+                if i.split(";")[1] != "":
+                    print (i.split(";")[0]+"  Value: "+i.split(";")[1])
+                    f.write(i.split(";")[0]+"  Value: "+i.split(";")[1]+"\n")
+                else:
+                    print(i.split(";")[0])
+                    f.write(i.split(";")[0]+"\n")
+            print("")
+            f.write("\n")
+            print("")
+            f.write("\n")
+            print("The complete report is in: "+BluePill_evasion_path + str(bestIt) + "/  with an increment of: "+str(perc)+"%")
+            f.write("The complete report is in: "+BluePill_evasion_path + str(bestIt) + "/  with an increment of: "+str(perc)+"%")
+            f.close()
+            clearFile()
+            plt.plot(plot_x,plot_y)
+            plt.xlabel("Iteration")
+            plt.ylabel("Value")
+            plt.show()
+        except:
+            print("Error in during Report Writing")
 
-    if len(FileDatabase) == 0 and len(KeyDatabase) == 0:                                                        #Case of no Files and no Keys
-        print("No file and Keys queries")
-        break
 
-    iterationWeight = int(calculateIterWeight(actualEvasionPath, FilesNumber, len(threads)))             #Calculate the Iteration Weight
-    if iteration == 0:
-        startWeight = int(iterationWeight)
-    plot_x.append(int(iteration))
-    plot_y.append(int(iterationWeight))
-    IterationDatabase[iteration] = [iterationWeight, noExistFiles.copy(), noExistKeys.copy(), toCreateFiles.copy(), toCreatekeys.copy()]
-    if findPeak(int(iterationWeight)):
-        break
 
-    
-    
-    if iteration == 0 or IterationDatabase[iteration][0] + 0*add_value > IterationDatabase[iteration-1][0]:
-        print(str(iteration+1)+": BETTER THAN PREVIOUS ITERATION "+str(iterationWeight))
-        if iteration > 0 and exitCase() or iteration > 149:
-            break
-        LastTouchedElement, LastTouchedValue = actionArtifact()
-        if LastTouchedElement == None and LastTouchedValue == None:
-            break
-    elif IterationDatabase[iteration][0] + 0*add_value == IterationDatabase[iteration-1][0]:
-        print(str(iteration+1)+": EQUAL TO PREVIOUS ITERATION "+str(iterationWeight))
-        p = LastTouchedElement
-        restoreArtifact(LastTouchedElement, LastTouchedValue)
-        if iteration > 0 and exitCase() or iteration > 149:
-            break
-        LastTouchedElement, LastTouchedValue = actionArtifact()
-        if LastTouchedElement == None and LastTouchedValue == None:
-            break
-    else:
-        print(str(iteration+1)+": WORSE THAN PREVIOUS ITERATION "+str(iterationWeight))
-        if iteration > 0 and exitCase() or iteration > 149:
-            break
-        restoreArtifact(LastTouchedElement, LastTouchedValue)
 
-    iteration += 1
 
-try:
-    os.system('VBoxManage controlvm Malware_Evasion poweroff')
-    os.system('VBoxManage snapshot Malware_Evasion delete "AG_SnapL"')
-    os.system('VBoxManage snapshot Malware_Evasion delete "AG_Snap"')
-except:
-    print("Error during VM shutdown")
 
-try:
-    f = open("report.txt","w")
-    f.close()
-    f = open("report.txt","a")
-    f.write("ArtifactGenerator\n")
-    print("")
-    print("")
-    f.write("\n")
-    bestIt, perc = getBestIteration()
-    print("FILES TO BE DELETED")
-    f.write("FILES TO BE DELETED\n")
-    for i in IterationDatabase[bestIt][1]:
-        print (i)
-        f.write(i+"\n")
-    print("")
-    print("FILES TO BE CREATED")
-    f.write("FILES TO BE CREATED\n")
-    for i in IterationDatabase[bestIt][3]:
-        print (i)
-        f.write(i+"\n")
-    print("")
-    print("KEYS TO BE DELETED")
-    f.write("KEYS TO BE DELETED\n")
-    for i in IterationDatabase[bestIt][2]:
-        if i.split(";")[1] != "":
-            print (i.split(";")[0]+"  Value: "+i.split(";")[1])
-            f.write(i.split(";")[0]+"  Value: "+i.split(";")[1])
-        else:
-            print(i.split(";")[0])
-            f.write(i.split(";")[0]+"\n")
-    print("")
-    print("KEYS TO BE CREATED")
-    f.write("KEYS TO BE CREATED\n")
-    for i in IterationDatabase[bestIt][4]:
-        if i.split(";")[1] != "":
-            print (i.split(";")[0]+"  Value: "+i.split(";")[1])
-            f.write(i.split(";")[0]+"  Value: "+i.split(";")[1])
-        else:
-            print(i.split(";")[0])
-            f.write(i.split(";")[0]+"\n")
-    print("")
-    f.write("\n")
-    print("")
-    f.write("\n")
-    print("The complete report is in: "+BluePill_evasion_path + str(bestIt) + "/  with an increment of: "+str(perc)+"%")
-    f.write("The complete report is in: "+BluePill_evasion_path + str(bestIt) + "/  with an increment of: "+str(perc)+"%")
-    f.close()
-    clearFile()
-    plt.plot(plot_x,plot_y)
-    plt.xlabel("Iteration")
-    plt.ylabel("Value")
-    plt.show()
-except:
-    print("Error in during Report Writing")
+class Running:    
+    def __init__(self, win):
+        tex = Text(win)
+        tex.place(x=10, y=40, height=550, width=580)
+        lab = Label(win, text="Peak Status = ", font=("Helvetica", 10))
+        lab.place(x=10, y=10)
+        lab2 = Label(win, text="None", font=("Helvetica", 10), fg ="coral")
+        lab2.place(x=100, y=10)
+        p=threading.Thread(target=AG, args=(win, tex, lab2))
+        p.start()
+        
+    def setText(self, tex, s, color):
+        tex.insert(END, s)
+        tex.see(END)
+
+    def setPeak(self, lab2, s, c):
+        lab2.config(text=s, fg=c)
+
+class Main:
+    def add(self):
+        windowL=Tk()
+        mywin=Running(windowL)
+        windowL.title('Artifact Generator')
+        windowWidth = windowL.winfo_reqwidth()
+        windowHeight = windowL.winfo_reqheight()
+        positionRight = int(window.winfo_screenwidth()/2 - windowWidth/2 -200)
+        positionDown = int(window.winfo_screenheight()/2 - windowHeight/2- 230)
+        windowL.geometry("600x600+{}+{}".format(positionRight, positionDown))
+        windowL.mainloop()
+        
+    def __init__(self, win):
+        nameI=Entry(win)
+        nameI.insert(0, 'Add Malware File')
+        nameI.place(x=110, y=83)
+
+        self.lbl=Label(win, text="Artifact Generator", font=("Helvetica", 16))
+        self.lbl.place(x=100, y=30)
+      
+        self.btn=Button(win, text="+",height = 1, command=self.add)
+        self.btn.place(x=240, y=80)
+        
+
+
+window=Tk()
+mywin=Main(window)
+window.title('Artifact Generator')
+windowWidth = window.winfo_reqwidth()
+windowHeight = window.winfo_reqheight()
+positionRight = int(window.winfo_screenwidth()/2 - windowWidth/2)
+positionDown = int(window.winfo_screenheight()/2 - windowHeight/2)
+window.geometry("360x200+{}+{}".format(positionRight, positionDown))
+window.mainloop()

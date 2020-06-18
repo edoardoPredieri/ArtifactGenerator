@@ -1,10 +1,13 @@
 import os
+import time
+import threading
 from winreg import *
 
 ToCreateFile_path = "Z:/in/toCreateFile.txt" 
 ToCreateKey_path = "Z:/in/toCreateKey.txt"
 Iteration_path = "Z:/in/iteration.txt"
 
+flag = False
 
 def findFile(targetFile):
     l = targetFile.split("\\")
@@ -16,7 +19,6 @@ def findFile(targetFile):
         if name in files:
             return True
     return False
-
 
 def CreateElement():
     file = open (ToCreateFile_path,"r")
@@ -86,34 +88,38 @@ def CreateElement():
         line = file.readline().strip()
     file.close()
 
+def contr():
+    global flag
+    while(not flag):
+        None
+    os.system("shutdown /s /f /t 0")
 
-
-
+def cont():
+    global flag
+    time.sleep(240)
+    flag = True
 
 def ExecuteBluePill():
     f = open (Iteration_path, "r")
     iteration = f.readline().strip()
     f.close()
-    
-    #os.system("C: & cd C:/Pin311 & echo F | xcopy ee.exe eeC.exe /y")
     os.system("C: & cd C:/Pin311 & pin -follow_execv -t bluepill32 -evasions -iter "+str(iteration)+" -- ee.exe")    #BluePill Execution Command
-    #if not findFile("C:\\Pin311\\ee.exe"):
-     #   print("Auto-Eliminate Malware   iteration = "+str(iteration))
-      #  os.system("C: & cd C:/Pin311 & rename eeC.exe ee.exe")
-
-
+    os.system("shutdown /s /f /t 0")
 
 try:
     CreateElement()
 except:
     print("Error Element Creation")
-    os.system("timeout 10")
-    
 try:
-    ExecuteBluePill()
+    p1=threading.Thread(target=ExecuteBluePill)
+    p2=threading.Thread(target=contr)
+    p3=threading.Thread(target=cont)
+
+    p1.start()
+    p2.start()
+    p3.start()
 except:
     print("Error BluePill")
-    os.system("timeout 10")
     
 
 
