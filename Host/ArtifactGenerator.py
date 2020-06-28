@@ -24,6 +24,22 @@ responseKey_path = "C:/Users/PredieriEd/Desktop/Shared_Mal_Folder/find/responseK
 #List of file's paths
 path_list = [BluePill_blackListFile_path, BluePill_blackListKey_path, ToCreateFile_path, ToCreateKey_path, Iteration_path, findFile_path, responseFile_path, findKey_path, responseKey_path]
 
+#List of command Flags
+command_flags = {"debugFlag" : False, "getimeFlag" : False, "compnameFlag" : False, "usernameFlag" : False, "getversionFlag" : False, "memoryFlag" : False,
+                 "adpterFlag" : False, "monitorFlag": False, "timeFlag" : False, "mouseFlag" : False, "keyboardFlag" : False, "powerFlag" : False}
+
+#List of line for each Command Flag
+command_line_flag = {"debugFlag" : [], "getimeFlag" : [], "compnameFlag" : [], "usernameFlag" : [], "getversionFlag" : [], "memoryFlag" : [],
+                 "adpterFlag" : [], "monitorFlag": [], "timeFlag" : [], "mouseFlag" : [], "keyboardFlag" : [], "powerFlag" : []}
+
+#List of command Types
+commandType = {"debugFlag" : ["IsDebuggerPresent", "CheckRemoteDebuggerPresent"], "getimeFlag" : ["GetLocalTime", "GetSystemTimeAsFile", "GetTimeZoneInformation"],
+               "compnameFlag" : ["GetComputerName", "GetComputerNameA", "GetComputerNameW", "WNetGetProviderName", "WNetGetProviderNameA", "WNetGetProviderNameW"],
+               "usernameFlag" : ["GetUserName", "GetUserNameA", "GetUserNameW"], "getversionFlag" : ["GetVersion", "GetVersionEx", "GetVersionExA", "GetVersionExW"],
+               "memoryFlag" : ["GlobalMemoryStatusEx", "GetDiskFreeSpaceEx", "GetDiskFreeSpaceExA", "GetDiskFreeSpaceExW"], "adpterFlag" : ["GetAdaptersInfo"], "monitorFlag" : ["GetMonitorInfo", "GetMonitorInfoA", "GetMonitorInfoW", "GetDesktopWindow", "GetWindowRect"],
+               "timeFlag" : ["NtDelayExecution", "NtQueryPerformanceCounter", "GetTickCount", "SetTimer", "WaitForSingleObject", "GetSystemTimeAsFileTime", "IcmpCreateFile", "IcmpSendEcho"],
+               "mouseFlag": ["GetCursorPos"], "keyboardFlag" : ["GetKeyboardLayout"], "powerFlag" : ["GetPwrCapabilities"]}
+
 #Weighted list of file manipulation commands
 FileCommandList = {"CreateFile" : 1, "CreateFileA" : 1, "CreateFileW" : 1,
                    "GetFileAttributesA" : 4, "GetFileAttributesW" : 4, "GetFileAttributes" : 4,
@@ -85,7 +101,7 @@ GeneralCommandList = {"IsDebuggerPresent" : 5, "CheckRemoteDebuggerPresent" : 5,
 whitelistFile = ["SVCHOST.EXE", "ACLAYERS.DLL", "CMD.EXE", "SORTDEFAULT.NLS", "DESKTOP.INI", "EE.EXE", "APPDATA", "MOUNTPOINTMANAGER", "EN", "STATICCACHE.DAT", "OLEACCRC.DLL", "ACXTRNAL.DLL", "MSVFW32.DLL.MUI", "AVICAP32.DLL.MUI",
                  "KERNELBASE.DLL.MUI", "MSCTF.DLL.MUI", "WERFAULT.EXE.MUI", "FAULTREP.DLL.MUI", "DWM.EXE", "EXPLORER.EXE", "WMIPRVSE.EXE", "PIN.EXE", "RSAENH.DLL", "SXBOY.EXE",
                  "OSSPROXY.PDB", "SERVICES.EXE", "SUP.DLL", "D3D8THK.DLL", "VERSION.DLL", "MSIMG32.DLL", "WINNSI.DLL", "DHCPCSVC.DLL", "PROFAPI.DLL", "D3D9.DLL", "DWMAPI.DLL", "RASAPI32.DLL",
-                 "FAULTREP.DLL", "RTUTILS.DLL", "MFC42U.DLL", "ODBC32.DLL", "API-MS-WIN-CORE-FIBERS-L1-1-1.DLL", "API-MS-WIN-CORE-FIBERS-I1-1-1.DLL"]
+                 "FAULTREP.DLL", "RTUTILS.DLL", "MFC42U.DLL", "ODBC32.DLL", "API-MS-WIN-CORE-FIBERS-L1-1-1.DLL", "API-MS-WIN-CORE-FIBERS-I1-1-1.DLL", "WSOCK32.DLL"]
 
 #List of Keys to not modificate
 whitelistKey = ["MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Session Manager", "Machine\\SYSTEM\\CurrentControlSet\\Control\\Session Manager", "\\REGISTRY\\MACHINE", "Machine\\SOFTWARE\\Policies\\Microsoft\\Windows\\Safer\\CodeIdentifiers",
@@ -104,7 +120,7 @@ whitelistKey = ["MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Session Manager", 
                 "Machine\\SYSTEM\\CurrentControlSet\\Control\\Nls\\CustomLocale", "Machine\\SOFTWARE\\Microsoft\\CTF\\KnownClasses", "Machine\\SOFTWARE\\Microsoft\\CTF\\DirectSwitchHotkeys", "Machine\\SOFTWARE\\Policies\\Microsoft\\SQMClient\\Windows", "Machine\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer",
                 "Machine\\SYSTEM\\CurrentControlSet\\Control\\ComputerName\\ActiveComputerName", "Machine\\CONTROL\\NetworkProvider\\HwOrder", "Machine\\SYSTEM\\CurrentControlSet\\Services\\Winsock\\Parameters", "Machine\\SYSTEM\\CurrentControlSet\\Services\\Tcpip6\\Parameters\\Winsock",
                 "Machine\\SYSTEM\\CurrentControlSet\\Services\\Psched\\Parameters\\Winsock", "Machine\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\\Winsock", "Machine\\SYSTEM\\CurrentControlSet\\Services\\RDPNP\\NetworkProvider", "Machine\\SYSTEM\\CurrentControlSet\\Services\\WebClient\\NetworkProvider",
-                "Machine\\SYSTEM\\CurrentControlSet\\Services\\DNS", "Machine\\SYSTEM\\CurrentControlSet\\Services\\Winsock\\Setup Migration\\Providers", "Machine\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\PeerDist\\Service"]
+                "Machine\\SYSTEM\\CurrentControlSet\\Services\\DNS", "Machine\\SYSTEM\\CurrentControlSet\\Services\\Winsock\\Setup Migration\\Providers", "Machine\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\PeerDist\\Service", "Machine\\SOFTWARE\\Classes\\CLSID"]
 
 #List of Key Values to not modificate
 whitelistValue = [["Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows", "RunDiagnosticLoggingApplicationManagement"], ["Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\GRE_Initialize", "DisableMetaFiles"], ["Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options", "EnableDefaultReply"],
@@ -140,7 +156,7 @@ startWeight = 0             #Weight of first iteration
 
 
 class AG:
-    def __init__(self, win, tex, lab):
+    def __init__(self, win, tex, lab, labFind, labIter):
 
         def writeBlackListFile():
             f = open(BluePill_blackListFile_path,"w")
@@ -288,7 +304,6 @@ class AG:
             importantValue = ""
             maxWeightFile = 0
             maxWeightKey = 0
-         
             if len(FileDatabase) > 0:
                 for i in FileDatabase.keys():
                     if FileDatabase[i][0] > maxWeightFile and not FileDatabase[i][3]:
@@ -723,16 +738,164 @@ class AG:
 
             previous_n = n
             return False
-            
-            
+
+        def writeResults(it, out):
+            out.write("--------MACHINE CONFIGURATION--------\n\n")
+            actualEvasionPath = BluePill_evasion_path + str(it) + "/"
+            usedLine = []
+            for file in os.listdir(actualEvasionPath):
+                if "evasion" in file:
+                    f = open (actualEvasionPath + file,"r")
+                    while (True):
+                        try:
+                            line = f.readline()
+                            break
+                        except:
+                            None
+                    while line != "":
+                        command = getCommand(line)
+                        if line not in usedLine:
+                            usedLine.append(line)
+                            for i in commandType.keys():
+                                for j in commandType[i]:
+                                    if command == j and line not in command_line_flag[i]:
+                                        command_line_flag[i].append(line)                                                
+                        while (True):
+                            try:
+                                line = f.readline()
+                                break
+                            except:
+                                None
+            for i in command_line_flag.keys():
+                if i == "debugFlag" and len(command_line_flag[i])>0:
+                    out.write("The malware tries to figure out if it is running under debug:\n")
+                    for j in command_line_flag["debugFlag"]:
+                        l = j.split(": ")
+                        l.remove(l[0])
+                        s = ""
+                        for k in l:
+                            s+=k
+                        out.write(s)
+                        
+                elif i == "getimeFlag" and len(command_line_flag[i])>0:
+                    out.write("The malware takes information regarding the machine time:\n")
+                    for j in command_line_flag["getimeFlag"]:
+                        l = j.split(": ")
+                        l.remove(l[0])
+                        s = ""
+                        for k in l:
+                            s+=k
+                        out.write(s)
+                            
+                elif i == "compnameFlag" and len(command_line_flag[i])>0:
+                    out.write("The malware takes information regarding the machine name (we recommend the use of a name not attributable to sandobox and vm):\n")
+                    for j in command_line_flag["compnameFlag"]:
+                        l = j.split(": ")
+                        l.remove(l[0])
+                        s = ""
+                        for k in l:
+                            s+=k
+                        out.write(s)
+                            
+                elif i == "usernameFlag" and len(command_line_flag[i])>0:
+                    out.write("The malware takes information regarding the username name (we recommend the use of a name not attributable to sandobox and vm):\n")
+                    for j in command_line_flag["usernameFlag"]:
+                        l = j.split(": ")
+                        l.remove(l[0])
+                        s = ""
+                        for k in l:
+                            s+=k
+                        out.write(s)
+                    
+                elif i == "getversionFlag" and len(command_line_flag[i])>0:
+                    out.write("The malware takes information regarding the windows version of the machine (the program used windows 7 Ultimate 32 bits):\n")
+                    for j in command_line_flag["getversionFlag"]:
+                        l = j.split(": ")
+                        l.remove(l[0])
+                        s = ""
+                        for k in l:
+                            s+=k
+                        out.write(s)
+                    
+                elif i == "memoryFlag" and len(command_line_flag[i])>0:
+                    out.write("The malware takes information regarding ram memory and / or disk (we used ram: tot = 7.7 Gb, available = 3.7 Gb, SSD: tot = 488 Gb, available = 129 Gb)\n")
+                    for j in command_line_flag["memoryFlag"]:
+                        l = j.split(": ")
+                        l.remove(l[0])
+                        s = ""
+                        for k in l:
+                            s+=k
+                        out.write(s)
+                    
+                elif i == "adpterFlag" and len(command_line_flag[i])>0:
+                    out.write("The malware takes information regarding internet adapters, such as the MAC Address (we used 06: 02: 27: 9C: BB: 27):\n")
+                    for j in command_line_flag["adpterFlag"]:
+                        l = j.split(": ")
+                        l.remove(l[0])
+                        s = ""
+                        for k in l:
+                            s+=k
+                        out.write(s)
+                            
+                elif i == "monitorFlag" and len(command_line_flag[i])>0:
+                    out.write("The Malware takes information regarding monitor size and resolution (we recommend using a real monitor):\n")
+                    for j in command_line_flag["monitorFlag"]:
+                        l = j.split(": ")
+                        l.remove(l[0])
+                        s = ""
+                        for k in l:
+                            s+=k
+                        out.write(s)
+                            
+                elif i == "timeFlag" and len(command_line_flag[i])>0:
+                    out.write("The Malware attempts to detect the response time of functions:\n")
+                    for j in command_line_flag["timeFlag"]:
+                        l = j.split(": ")
+                        l.remove(l[0])
+                        s = ""
+                        for k in l:
+                            s+=k
+                        out.write(s)
+                            
+                elif i == "mouseFlag" and len(command_line_flag[i])>0:
+                    out.write("The malware monitors the position of the mouse (it is recommended not to keep the mouse still):\n")
+                    for j in command_line_flag["mouseFlag"]:
+                        l = j.split(": ")
+                        l.remove(l[0])
+                        s = ""
+                        for k in l:
+                            s+=k
+                        out.write(s)
+                                   
+                elif i == "keyboardFlag" and len(command_line_flag[i])>0:
+                    out.write("The malware takes information regarding the keyboard layout (we used En-uk):\n")
+                    for j in command_line_flag["keyboardFlag"]:
+                        l = j.split(": ")
+                        l.remove(l[0])
+                        s = ""
+                        for k in l:
+                            s+=k
+                        out.write(s)
+                                   
+                elif i == "powerFlag" and len(command_line_flag[i])>0:
+                    out.write("The Malware tries to understand if the machine is connected to the current (we recommend doing it):\n")
+                    for j in command_line_flag["powerFlag"]:
+                        l = j.split(": ")
+                        l.remove(l[0])
+                        s = ""
+                        for k in l:
+                            s+=k
+                        out.write(s)
+
+
+
+
 
         iteration = 0                                                                                                   #Number of AG Iteration
         LastTouchedElement = ""                                                                                         #Last modified Element
         LastTouchedValue = ""                                                                                           #Last modified Key Value
 
         Running.setText(win, tex, "ArtifactGenerator\n"+'\n', "black")                                                                            
-        #print("ArtifactGenerator")
-        #rint("")
 
         os.system('VBoxManage snapshot Malware_Evasion take "AG_Snap" --description "AG_Snap"')
         os.system('VBoxManage startvm "Malware_Evasion" --type headless')
@@ -767,6 +930,8 @@ class AG:
 
             PreviousLine = ""
             add_value = 0
+            newFind = 0
+            Running.setPeak(win, labFind, newFind, "coral")
             
             for file in os.listdir(actualEvasionPath):                                                                  #Read all files in the folder
                 if "evasion" in file:
@@ -796,10 +961,10 @@ class AG:
                                 key = ""
                             
                             if controlKey(key):                                                                         #Verify the Key Correctness
-                                if iteration > 1:
+                                if iteration > 0:
                                     add_value+=100
-                                    Running.setText(win, tex, "--NEW FIND--"+'\n', "yellow")
-                                    #print("--NEW FIND--")
+                                newFind += 1
+                                Running.setPeak(win, labFind, newFind, "coral")
                                 targetKey = ClearKey(key)
                                 isPresent = findKey(targetKey,"")                                                       #Verify if the Key is present
                                 weight = calculateWeightKey(targetKey, "")                                              #Calculate the Key Weight
@@ -820,6 +985,8 @@ class AG:
                                  #print("Error splitting FILE commad "+command)
                                  targetFile = ""
                             if controlFile(targetFile):                                                                 #Verify the File Correctness
+                                newFind += 1
+                                Running.setPeak(win, labFind, newFind, "coral")
                                 if iteration > 0:
                                     add_value+=100
                                 if "?" in targetFile:
@@ -840,10 +1007,10 @@ class AG:
                         if command == "NtQueryValueKey":
                             valueKey = line.split("--")[1].strip()                                                      #Get the Query Value
                             if targetKey != "" and controlValue(targetKey, valueKey):
-                                if iteration > 1:
-                                    Running.setText(win, tex, "--NEW FIND--"+'\n', "yellow")
-                                    #print("--NEW FIND--")
+                                if iteration > 0:
                                     add_value+=50
+                                newFind += 1
+                                Running.setPeak(win, labFind, newFind, "coral")
                                 KeyDatabase[targetKey][1].append(valueKey)                                              #Update the Key Database
                                 isPresent = findKey(targetKey, valueKey)                                                #Verify if the Value is present
                                 KeyDatabase[targetKey][2].append(isPresent)                                             #Update the Key Database
@@ -908,6 +1075,7 @@ class AG:
                 restoreArtifact(LastTouchedElement, LastTouchedValue)
 
             iteration += 1
+            Running.setPeak(win, labIter, iteration, "coral")
 
         try:
             os.system('VBoxManage controlvm Malware_Evasion poweroff')
@@ -915,7 +1083,7 @@ class AG:
             os.system('VBoxManage snapshot Malware_Evasion delete "AG_Snap"')
         except:
             print("Error during VM shutdown")
-
+        
         try:
             f = open("report.txt","w")
             f.close()
@@ -924,18 +1092,21 @@ class AG:
             print("")
             print("")
             f.write("\n")
+            f.write("--------FILE AND KEY CONFIGURATION--------\n\n")
             bestIt, perc = getBestIteration()
             print("FILES TO BE DELETED")
             f.write("FILES TO BE DELETED\n")
             for i in IterationDatabase[bestIt][1]:
                 print (i)
                 f.write(i+"\n")
+            f.write("\n")
             print("")
             print("FILES TO BE CREATED")
             f.write("FILES TO BE CREATED\n")
             for i in IterationDatabase[bestIt][3]:
                 print (i)
                 f.write(i+"\n")
+            f.write("\n")
             print("")
             print("KEYS TO BE DELETED")
             f.write("KEYS TO BE DELETED\n")
@@ -946,6 +1117,7 @@ class AG:
                 else:
                     print(i.split(";")[0])
                     f.write(i.split(";")[0]+"\n")
+            f.write("\n")
             print("")
             print("KEYS TO BE CREATED")
             f.write("KEYS TO BE CREATED\n")
@@ -956,6 +1128,11 @@ class AG:
                 else:
                     print(i.split(";")[0])
                     f.write(i.split(";")[0]+"\n")
+            print("")
+            f.write("\n")
+            print("")
+            f.write("\n")
+            writeResults(bestIt, f)
             print("")
             f.write("\n")
             print("")
@@ -984,11 +1161,19 @@ class Running:
         lab.place(x=10, y=10)
         lab2 = Label(win, text="None", font=("Helvetica", 10), fg ="coral")
         lab2.place(x=100, y=10)
-        p=threading.Thread(target=AG, args=(win, tex, lab2))
+        lab3 = Label(win, text="New Find = ", font=("Helvetica", 10))
+        lab3.place(x=250, y=10)
+        lab4 = Label(win, text="0", font=("Helvetica", 10), fg ="coral")
+        lab4.place(x=320, y=10)
+        lab5 = Label(win, text="Iteration = ", font=("Helvetica", 10))
+        lab5.place(x=500, y=10)
+        lab6 = Label(win, text="0", font=("Helvetica", 10), fg ="coral")
+        lab6.place(x=560, y=10)
+        p=threading.Thread(target=AG, args=(win, tex, lab2, lab4, lab6))
         p.start()
-        
+ 
     def setText(self, tex, s, color):
-        tex.insert(END, s)
+        tex.insert(END, str(s))
         tex.see(END)
 
     def setPeak(self, lab2, s, c):

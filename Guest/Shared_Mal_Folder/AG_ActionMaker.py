@@ -84,7 +84,6 @@ def CreateElement():
                     CreateKey(HKEY_CURRENT_USER, k)
             except:
                 print("Error during creation: "+reg)
-
         line = file.readline().strip()
     file.close()
 
@@ -92,7 +91,7 @@ def contr():
     global flag
     while(not flag):
         None
-    os.system("shutdown /s /f /t 0")
+    os.system("shutdown /p /f")
 
 def cont():
     global flag
@@ -104,7 +103,7 @@ def ExecuteBluePill():
     iteration = f.readline().strip()
     f.close()
     os.system("C: & cd C:/Pin311 & pin -follow_execv -t bluepill32 -evasions -iter "+str(iteration)+" -- ee.exe")    #BluePill Execution Command
-    os.system("shutdown /s /f /t 0")
+    os.system("shutdown /p /f")
 
 try:
     CreateElement()
