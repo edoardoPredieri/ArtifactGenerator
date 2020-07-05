@@ -36,7 +36,7 @@ command_line_flag = {"debugFlag" : [], "getimeFlag" : [], "compnameFlag" : [], "
 commandType = {"debugFlag" : ["IsDebuggerPresent", "CheckRemoteDebuggerPresent"], "getimeFlag" : ["GetLocalTime", "GetSystemTimeAsFile", "GetTimeZoneInformation"],
                "compnameFlag" : ["GetComputerName", "GetComputerNameA", "GetComputerNameW", "WNetGetProviderName", "WNetGetProviderNameA", "WNetGetProviderNameW"],
                "usernameFlag" : ["GetUserName", "GetUserNameA", "GetUserNameW"], "getversionFlag" : ["GetVersion", "GetVersionEx", "GetVersionExA", "GetVersionExW"],
-               "memoryFlag" : ["GlobalMemoryStatusEx", "GetDiskFreeSpaceEx", "GetDiskFreeSpaceExA", "GetDiskFreeSpaceExW"], "adpterFlag" : ["GetAdaptersInfo"], "monitorFlag" : ["GetMonitorInfo", "GetMonitorInfoA", "GetMonitorInfoW", "GetDesktopWindow", "GetWindowRect"],
+               "memoryFlag" : ["GlobalMemoryStatusEx", "GetDiskFreeSpaceEx", "GetDiskFreeSpaceExA", "GetDiskFreeSpaceExW"], "adpterFlag" : ["GetAdaptersInfo"], "monitorFlag" : ["FindWindow", "GetMonitorInfo", "GetMonitorInfoA", "GetMonitorInfoW", "GetDesktopWindow", "GetWindowRect"],
                "timeFlag" : ["NtDelayExecution", "NtQueryPerformanceCounter", "GetTickCount", "SetTimer", "WaitForSingleObject", "GetSystemTimeAsFileTime", "IcmpCreateFile", "IcmpSendEcho"],
                "mouseFlag": ["GetCursorPos"], "keyboardFlag" : ["GetKeyboardLayout"], "powerFlag" : ["GetPwrCapabilities"]}
 
@@ -258,7 +258,6 @@ class AG:
                                 if not peak:
                                     Running.setText(win, tex, "-------Possibly Peak: "+command+'\n', "green")
                                     Running.setPeak(win, lab, "Possible", "yellow")
-                                    #print("-------Possibly Peak: "+command)
                                 possiblyPeak = True
                                 commandsWeight += 20
                             elif line != lastLine:
@@ -269,7 +268,6 @@ class AG:
                                 line = f.readline()
                                 break
                             except:
-                                #print("Error reading line")
                                 None
                     f.close()
                 endFilesNumber += 1 
@@ -331,7 +329,6 @@ class AG:
                 if FileDatabase[importantFile][1] == 1:
                      last = 1
                      Running.setText(win, tex, "Deleting: "+importantFile+"..."+'\n', "coral")
-                     #print("Deleting: "+importantFile+"...")
                      l = importantFile.split("\\")
                      name = l[len(l)-1]
                      path = "".join(str(elem)+"\\\\" for elem in l[0:len(l)-1])
@@ -366,7 +363,6 @@ class AG:
                 else:
                     last = 2
                     Running.setText(win, tex, "Creating: "+importantFile+"..."+'\n', "coral")
-                    #print("Creating: "+importantFile+"...")
                     l = importantFile.split("\\")
                     name = l[len(l)-1]
                     path = "".join(str(elem)+"\\\\" for elem in l[0:len(l)-1])
@@ -406,7 +402,6 @@ class AG:
                     if KeyDatabase[importantKey][2][0] == 1:
                         last = 3
                         Running.setText(win, tex, "Deleting: "+importantKey+"..."+'\n', "coral")
-                        #print("Deleting: "+importantKey+"...")
                         if importantKey+";" in toCreatekeys:
                             toCreatekeys.remove(importantKey+";")
                             writeToCreateKey()
@@ -419,7 +414,6 @@ class AG:
                     else:
                         last = 4
                         Running.setText(win, tex, "Creating: "+importantKey+"..."+'\n', "coral")
-                        #print("Creating: "+importantKey+"...")
                         if importantKey+";" in noExistKeys:
                             noExistKeys.remove(importantKey+";")
                             writeBlackListKey()
@@ -437,7 +431,6 @@ class AG:
                     if KeyDatabase[importantKey][2][pos] == 1:
                         last = 3
                         Running.setText(win, tex, "Deleting: "+importantKey+"  "+importantValue+"..."+'\n', "coral")
-                        #print("Deleting: "+importantKey+"  "+importantValue+"...")
                         if importantKey+";"+importantValue in toCreatekeys:
                             toCreatekeys.remove(importantKey+";"+importantValue)
                             writeToCreateKey()
@@ -450,7 +443,6 @@ class AG:
                     else:
                         last = 4
                         Running.setText(win, tex, "Creating: "+importantKey+"  "+importantValue+"..."+'\n', "coral")
-                        #print("Creating: "+importantKey+"  "+importantValue+"...")
                         if importantKey+";"+importantValue in noExistKeys:
                             noExistKeys.remove(importantKey+";"+importantValue)
                             writeBlackListKey()
@@ -468,7 +460,6 @@ class AG:
             if LastTouchedElem in FileDatabase.keys():
                 if FileDatabase[LastTouchedElem][1] == 1:
                     Running.setText(win, tex, "Deleting: "+LastTouchedElem+"..."+'\n', "coral")
-                    #print("Deleting: "+LastTouchedElem+"...")
                     l = LastTouchedElem.split("\\")
                     name = l[len(l)-1]
                     path = "".join(str(elem)+"\\\\" for elem in l[0:len(l)-1])
@@ -487,7 +478,6 @@ class AG:
                 else:
                     last = 2
                     Running.setText(win, tex, "Creating: "+LastTouchedElem+"..."+'\n', "coral")
-                    #print("Creating: "+LastTouchedElem+"...")
                     l = LastTouchedElem.split("\\")
                     name = l[len(l)-1]
                     path = "".join(str(elem)+"\\\\" for elem in l[0:len(l)-1])
@@ -525,7 +515,6 @@ class AG:
                 if len(KeyDatabase[LastTouchedElem][1]) == 0 or LastTouchedValue == None:
                     if KeyDatabase[LastTouchedElem][2][0] == 1:
                         Running.setText(win, tex, "Deleting: "+LastTouchedElem+"..."+'\n', "coral")
-                        #print("Deleting: "+LastTouchedElem+"...")
                         if LastTouchedElem+";" in toCreatekeys:
                             toCreatekeys.remove(LastTouchedElem+";")
                             writeToCreateKey()
@@ -535,7 +524,6 @@ class AG:
                     else:
                         last = 4
                         Running.setText(win, tex, "Creating: "+LastTouchedElem+"..."+'\n', "coral")
-                        #print("Creating: "+LastTouchedElem+"...")
                         if LastTouchedElem+";" in noExistKeys:
                             noExistKeys.remove(LastTouchedElem+";")
                             writeBlackListKey()
@@ -551,7 +539,6 @@ class AG:
                     pos = (KeyDatabase[LastTouchedElem][1]).index(LastTouchedValue) + 1
                     if KeyDatabase[LastTouchedElem][2][pos] == 1:
                         Running.setText(win, tex, "Deleting: "+LastTouchedElem+"  "+LastTouchedValue+"..."+'\n', "coral")
-                        #print("Deleting: "+LastTouchedElem+"  "+LastTouchedValue+"...")
                         if LastTouchedElem+";"+LastTouchedValue in toCreatekeys:
                             toCreatekeys.remove(LastTouchedElem+";"+LastTouchedValue)
                             writeToCreateKey()
@@ -560,7 +547,6 @@ class AG:
                     else:
                         last = 4
                         Running.setText(win, tex, "Creating: "+LastTouchedElem+"  "+LastTouchedValue+"..."+'\n', "coral")
-                        #print("Creating: "+LastTouchedElem+"  "+LastTouchedValue+"...")
                         if LastTouchedElem+";"+LastTouchedValue in noExistKeys:
                             noExistKeys.remove(LastTouchedElem+";"+LastTouchedValue)
                             writeBlackListKey()
@@ -667,7 +653,6 @@ class AG:
             try:    
                 command = line.split("[")[1].split("]")[0]
             except:
-                #print("Error splitting line "+line)
                 command = ""
             return command
 
@@ -729,18 +714,24 @@ class AG:
                 val = random.randint(1,100)
                 n_equal += 5
                 if peak and val <= n_equal:
-                    return True
+                    #return True
+                    return False
             else:
                 n_equal = 0
                 if possiblyPeak and n > startWeight + 100:
                     Running.setPeak(win, lab, "Found", "green")
                     peak = True
 
+                    from tkinter import messagebox
+                    response = messagebox.askquestion("Peak found!", "Do you want stop the analysis?", icon='warning')
+                    if response == "yes":
+                        return True
+
             previous_n = n
             return False
 
         def writeResults(it, out):
-            out.write("--------MACHINE CONFIGURATION--------\n\n")
+            out.write("----------MACHINE CONFIGURATION-----------\n\n")
             actualEvasionPath = BluePill_evasion_path + str(it) + "/"
             usedLine = []
             for file in os.listdir(actualEvasionPath):
@@ -754,8 +745,13 @@ class AG:
                             None
                     while line != "":
                         command = getCommand(line)
-                        if line not in usedLine:
-                            usedLine.append(line)
+                        l = line.split(": ")
+                        l.remove(l[0])
+                        s = ""
+                        for k in l:
+                            s+=k
+                        if s not in usedLine:
+                            usedLine.append(s)
                             for i in commandType.keys():
                                 for j in commandType[i]:
                                     if command == j and line not in command_line_flag[i]:
@@ -768,7 +764,7 @@ class AG:
                                 None
             for i in command_line_flag.keys():
                 if i == "debugFlag" and len(command_line_flag[i])>0:
-                    out.write("The malware tries to figure out if it is running under debug:\n")
+                    out.write("\nThe malware tries to figure out if it is running under debug:\n")
                     for j in command_line_flag["debugFlag"]:
                         l = j.split(": ")
                         l.remove(l[0])
@@ -778,7 +774,7 @@ class AG:
                         out.write(s)
                         
                 elif i == "getimeFlag" and len(command_line_flag[i])>0:
-                    out.write("The malware takes information regarding the machine time:\n")
+                    out.write("\nThe malware takes information regarding the machine time:\n")
                     for j in command_line_flag["getimeFlag"]:
                         l = j.split(": ")
                         l.remove(l[0])
@@ -788,7 +784,7 @@ class AG:
                         out.write(s)
                             
                 elif i == "compnameFlag" and len(command_line_flag[i])>0:
-                    out.write("The malware takes information regarding the machine name (we recommend the use of a name not attributable to sandobox and vm):\n")
+                    out.write("\nThe malware takes information regarding the machine name (we recommend the use of a name not attributable to sandobox and vm):\n")
                     for j in command_line_flag["compnameFlag"]:
                         l = j.split(": ")
                         l.remove(l[0])
@@ -798,7 +794,7 @@ class AG:
                         out.write(s)
                             
                 elif i == "usernameFlag" and len(command_line_flag[i])>0:
-                    out.write("The malware takes information regarding the username name (we recommend the use of a name not attributable to sandobox and vm):\n")
+                    out.write("\nThe malware takes information regarding the username name (we recommend the use of a name not attributable to sandobox and vm):\n")
                     for j in command_line_flag["usernameFlag"]:
                         l = j.split(": ")
                         l.remove(l[0])
@@ -808,7 +804,7 @@ class AG:
                         out.write(s)
                     
                 elif i == "getversionFlag" and len(command_line_flag[i])>0:
-                    out.write("The malware takes information regarding the windows version of the machine (the program used windows 7 Ultimate 32 bits):\n")
+                    out.write("\nThe malware takes information regarding the windows version of the machine (the program used windows 7 Ultimate 32 bits):\n")
                     for j in command_line_flag["getversionFlag"]:
                         l = j.split(": ")
                         l.remove(l[0])
@@ -818,7 +814,7 @@ class AG:
                         out.write(s)
                     
                 elif i == "memoryFlag" and len(command_line_flag[i])>0:
-                    out.write("The malware takes information regarding ram memory and / or disk (we used ram: tot = 7.7 Gb, available = 3.7 Gb, SSD: tot = 488 Gb, available = 129 Gb)\n")
+                    out.write("\nThe malware takes information regarding ram memory and / or disk (we used ram: tot = 7.7 Gb, available = 3.7 Gb, SSD: tot = 488 Gb, available = 129 Gb)\n")
                     for j in command_line_flag["memoryFlag"]:
                         l = j.split(": ")
                         l.remove(l[0])
@@ -828,7 +824,7 @@ class AG:
                         out.write(s)
                     
                 elif i == "adpterFlag" and len(command_line_flag[i])>0:
-                    out.write("The malware takes information regarding internet adapters, such as the MAC Address (we used 06: 02: 27: 9C: BB: 27):\n")
+                    out.write("\nThe malware takes information regarding internet adapters, such as the MAC Address (we used 06: 02: 27: 9C: BB: 27):\n")
                     for j in command_line_flag["adpterFlag"]:
                         l = j.split(": ")
                         l.remove(l[0])
@@ -838,7 +834,7 @@ class AG:
                         out.write(s)
                             
                 elif i == "monitorFlag" and len(command_line_flag[i])>0:
-                    out.write("The Malware takes information regarding monitor size and resolution (we recommend using a real monitor):\n")
+                    out.write("\nThe Malware takes information regarding monitor size and resolution (we recommend using a real monitor):\n")
                     for j in command_line_flag["monitorFlag"]:
                         l = j.split(": ")
                         l.remove(l[0])
@@ -848,7 +844,7 @@ class AG:
                         out.write(s)
                             
                 elif i == "timeFlag" and len(command_line_flag[i])>0:
-                    out.write("The Malware attempts to detect the response time of functions:\n")
+                    out.write("\nThe Malware attempts to detect the response time of functions:\n")
                     for j in command_line_flag["timeFlag"]:
                         l = j.split(": ")
                         l.remove(l[0])
@@ -858,7 +854,7 @@ class AG:
                         out.write(s)
                             
                 elif i == "mouseFlag" and len(command_line_flag[i])>0:
-                    out.write("The malware monitors the position of the mouse (it is recommended not to keep the mouse still):\n")
+                    out.write("\nThe malware monitors the position of the mouse (it is recommended not to keep the mouse still):\n")
                     for j in command_line_flag["mouseFlag"]:
                         l = j.split(": ")
                         l.remove(l[0])
@@ -868,7 +864,7 @@ class AG:
                         out.write(s)
                                    
                 elif i == "keyboardFlag" and len(command_line_flag[i])>0:
-                    out.write("The malware takes information regarding the keyboard layout (we used En-uk):\n")
+                    out.write("\nThe malware takes information regarding the keyboard layout (we used En-uk):\n")
                     for j in command_line_flag["keyboardFlag"]:
                         l = j.split(": ")
                         l.remove(l[0])
@@ -878,7 +874,7 @@ class AG:
                         out.write(s)
                                    
                 elif i == "powerFlag" and len(command_line_flag[i])>0:
-                    out.write("The Malware tries to understand if the machine is connected to the current (we recommend doing it):\n")
+                    out.write("\nThe Malware tries to understand if the machine is connected to the current (we recommend doing it):\n")
                     for j in command_line_flag["powerFlag"]:
                         l = j.split(": ")
                         l.remove(l[0])
@@ -890,6 +886,7 @@ class AG:
 
 
 
+        
 
         iteration = 0                                                                                                   #Number of AG Iteration
         LastTouchedElement = ""                                                                                         #Last modified Element
@@ -942,7 +939,6 @@ class AG:
                             line = f.readline()
                             break
                         except:
-                            #print("Error reading line")
                             None
 
                     while line != "":
@@ -957,9 +953,7 @@ class AG:
                             try:
                                 key = line.split("--")[2].strip()
                             except:
-                                #print("Error splitting REGKEY commad "+command)
                                 key = ""
-                            
                             if controlKey(key):                                                                         #Verify the Key Correctness
                                 if iteration > 0:
                                     add_value+=100
@@ -973,7 +967,6 @@ class AG:
                                 targetKey = ClearKey(key)
                             else:
                                 targetKey = ""
-
                         
                         #--------FILE Case-------------------------------------------------------------------------------------------------------------------------------                                                                 
                         elif command in FileCommandList.keys():
@@ -982,7 +975,6 @@ class AG:
                                 mode = line.split("[")[1].split("]")[1].split("--")[1].strip()                          #Get the open modality (Read, Open, ...)
                                 targetFile = line.split("[")[1].split("]")[1].split("--")[2].strip()                    #Get the File path
                             except:
-                                 #print("Error splitting FILE commad "+command)
                                  targetFile = ""
                             if controlFile(targetFile):                                                                 #Verify the File Correctness
                                 newFind += 1
@@ -1046,12 +1038,11 @@ class AG:
             plot_y.append(int(iterationWeight))
             IterationDatabase[iteration] = [iterationWeight, noExistFiles.copy(), noExistKeys.copy(), toCreateFiles.copy(), toCreatekeys.copy()]
             if findPeak(int(iterationWeight)):
+                Running.setText(win, tex, str(iteration+1)+": BETTER THAN PREVIOUS ITERATION "+str(iterationWeight)+'\n', "yellow")
                 break
-
                         
             if iteration == 0 or IterationDatabase[iteration][0] + 0*add_value > IterationDatabase[iteration-1][0]:
                 Running.setText(win, tex, str(iteration+1)+": BETTER THAN PREVIOUS ITERATION "+str(iterationWeight)+'\n', "yellow")
-                #print(str(iteration+1)+": BETTER THAN PREVIOUS ITERATION "+str(iterationWeight))
                 if iteration > 0 and exitCase() or iteration > 149:
                     break
                 LastTouchedElement, LastTouchedValue = actionArtifact()
@@ -1059,7 +1050,6 @@ class AG:
                     break
             elif IterationDatabase[iteration][0] + 0*add_value == IterationDatabase[iteration-1][0]:
                 Running.setText(win, tex, str(iteration+1)+": EQUAL TO PREVIOUS ITERATION "+str(iterationWeight)+'\n', "yellow")
-                #print(str(iteration+1)+": EQUAL TO PREVIOUS ITERATION "+str(iterationWeight))
                 p = LastTouchedElement
                 restoreArtifact(LastTouchedElement, LastTouchedValue)
                 if iteration > 0 and exitCase() or iteration > 149:
@@ -1069,7 +1059,6 @@ class AG:
                     break
             else:
                 Running.setText(win, tex, str(iteration+1)+": WORSE THAN PREVIOUS ITERATION "+str(iterationWeight)+'\n', "yellow")
-                #print(str(iteration+1)+": WORSE THAN PREVIOUS ITERATION "+str(iterationWeight))
                 if iteration > 0 and exitCase() or iteration > 149:
                     break
                 restoreArtifact(LastTouchedElement, LastTouchedValue)
@@ -1178,6 +1167,8 @@ class Running:
 
     def setPeak(self, lab2, s, c):
         lab2.config(text=s, fg=c)
+
+
 
 class Main:
     def add(self):

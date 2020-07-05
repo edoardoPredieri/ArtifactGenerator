@@ -7,49 +7,37 @@ FILES TO BE DELETED
 FILES TO BE CREATED
 
 KEYS TO BE DELETED
+Machine\HARDWARE\ACPI\DSDT\VBOX__
 
 KEYS TO BE CREATED
-Machine\SOFTWARE\Policies\Microsoft\Windows NT\Rpc
-Machine\SOFTWARE\Policies\Microsoft\Windows NT\Rpc  Value: StateInformation
-Machine\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{f76f85ec-c350-441b-a77f-938d5ae7d50a}
-Machine\SOFTWARE\Policies\Microsoft\Windows NT\Rpc  Value: BadProxyExpiresTime
-Machine\SOFTWARE\Policies\Microsoft\Windows NT\Rpc  Value: DefaultConnectionSettings
-Machine\SOFTWARE\Policies\Microsoft\Windows NT\Rpc  Value: AutoDetect
-Machine\SOFTWARE\Microsoft\Rpc  Value: PrioritizeRecordData
+Machine\SOFTWARE\Microsoft\Windows NT\CurrentVersion\FontLink\SystemLink  Value: Disable
 
 
---------MACHINE CONFIGURATION--------
+----------MACHINE CONFIGURATION-----------
+
 
 The malware tries to figure out if it is running under debug:
 [IsDebuggerPresent] -- Debugger check
-[IsDebuggerPresent] -- Debugger check
+[CheckRemoteDebuggerPresent] -- Debugger check
+
 The malware takes information regarding the machine time:
-[GetSystemTimeAsFile] -- System Time check
-[GetSystemTimeAsFile] -- System Time check
 [GetLocalTime] -- Local Time check
 [GetSystemTimeAsFile] -- System Time check
-[GetSystemTimeAsFile] -- System Time check
-[GetSystemTimeAsFile] -- System Time check
-[GetSystemTimeAsFile] -- System Time check
-[GetTimeZoneInformation] -- Time Zone check
+
 The malware takes information regarding the username name (we recommend the use of a name not attributable to sandobox and vm):
 [GetUserName] -- User Name check
+
 The malware takes information regarding the windows version of the machine (the program used windows 7 Ultimate 32 bits):
 [GetVersionEx] -- OS Version check
-[GetVersionEx] -- OS Version check
-[GetVersionEx] -- OS Version check
-[GetVersionEx] -- OS Version check
-[GetVersionEx] -- OS Version check
-[GetVersionEx] -- OS Version check
+[GetVersion] -- OS Version check
+
 The Malware takes information regarding monitor size and resolution (we recommend using a real monitor):
+[FindWindow] -- OLLYDBG
+[FindWindow] --
 [GetDesktopWindow] -- (Possibly) Desktop resolution check
+
 The Malware attempts to detect the response time of functions:
 [GetTickCount]
-[WaitForSingleObject] WaitForSingleObject called! -> 10000
-[WaitForSingleObject] WaitForSingleObject called! -> 0
-[WaitForSingleObject] WaitForSingleObject called! -> 0
-[GetTickCount]
-[WaitForSingleObject] WaitForSingleObject called! -> 0
 
 
-The complete report is in: C:/Users/PredieriEd/Desktop/Shared_Mal_Folder/out/43/  with an increment of: 74.37345570067066%
+The complete report is in: C:/Users/PredieriEd/Desktop/Shared_Mal_Folder/out/7/  with an increment of: 45.81151832460733%
